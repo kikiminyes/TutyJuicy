@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Batch } from '../../types';
 import { Button } from '../../components/ui/Button';
-import { X, Package, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+import { X, AlertTriangle } from 'lucide-react';
 import styles from './EditStockModal.module.css';
 import toast from 'react-hot-toast';
 
