@@ -1,0 +1,331 @@
+/* LandingPage.module.css */
+
+.loadingContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 50vh;
+}
+
+.hero {
+    position: relative;
+    padding: 3rem 1rem 6rem;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 243, 224, 0.4) 100%);
+    overflow: hidden;
+}
+
+.heroContent {
+    max-width: 600px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.brandWrapper {
+    margin-bottom: 2.5rem;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #FF9100 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.03em;
+    filter: drop-shadow(0 2px 10px rgba(255, 127, 80, 0.2));
+}
+
+.tagline {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    letter-spacing: -0.01em;
+}
+
+/* Batch Status Card */
+.batchStatus {
+    perspective: 1000px;
+}
+
+.activeBatchCard {
+    background: var(--color-surface);
+    border-radius: var(--radius-2xl);
+    padding: 2rem;
+    box-shadow:
+        0 20px 40px -10px rgba(255, 112, 67, 0.15),
+        0 0 0 1px rgba(255, 112, 67, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(8px);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+}
+
+.activeBatchCard:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 25px 50px -12px rgba(255, 112, 67, 0.25),
+        0 0 0 1px rgba(255, 112, 67, 0.1);
+}
+
+.inactiveBatchCard {
+    background: var(--color-surface-subtle);
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    border: 1px dashed var(--color-border);
+    animation: fadeIn 0.8s ease-out;
+}
+
+.batchTitle {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--color-text);
+    margin: 1rem 0;
+    line-height: 1.2;
+}
+
+.deliveryInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-divider);
+}
+
+.deliveryLabel {
+    font-size: 0.875rem;
+    color: var(--color-text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.deliveryDate {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-primary-dark);
+}
+
+/* Badges */
+.activeBadge,
+.inactiveBadge,
+.loadingBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.activeBadge {
+    background-color: #E0F2F1;
+    color: #00695C;
+    border: 1px solid #B2DFDB;
+    box-shadow: 0 2px 4px rgba(0, 105, 92, 0.05);
+}
+
+.inactiveBadge {
+    background-color: #F1F5F9;
+    color: #64748B;
+    border: 1px solid #E2E8F0;
+}
+
+.dot {
+    width: 8px;
+    height: 8px;
+    background-color: #00C853;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    box-shadow: 0 0 0 3px rgba(0, 200, 83, 0.2);
+    animation: pulse 2s infinite;
+}
+
+.inactiveText {
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+    margin-top: 0.5rem;
+}
+
+.notifyBtn {
+    margin-top: 1.5rem;
+    background: #0891b2;
+    /* Cyan-600 */
+    color: white;
+    border: none;
+    padding: 0.875rem 1.5rem;
+    border-radius: 9999px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    box-shadow: 0 4px 6px -1px rgba(8, 145, 178, 0.2);
+}
+
+.notifyBtn:hover {
+    background: #0e7490;
+    /* Cyan-700 */
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(8, 145, 178, 0.3);
+}
+
+.notifyBtn svg {
+    animation: bellShake 2s infinite;
+}
+
+@keyframes bellShake {
+
+    0%,
+    100% {
+        transform: rotate(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: rotate(0);
+    }
+
+    20% {
+        transform: rotate(15deg);
+    }
+
+    40% {
+        transform: rotate(-15deg);
+    }
+
+    60% {
+        transform: rotate(10deg);
+    }
+
+    80% {
+        transform: rotate(-10deg);
+    }
+}
+
+/* Menu Section */
+.menuSection {
+    background: var(--color-surface);
+    border-radius: 40px 40px 0 0;
+    /* Modern curved top */
+    padding: 3rem 0 6rem;
+    margin-top: -2rem;
+    /* Overlap hero */
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.03);
+    min-height: 60vh;
+}
+
+.sectionHeader {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 0 1rem;
+}
+
+.sectionTitle {
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+}
+
+.sectionSubtitle {
+    color: var(--color-text-muted);
+    font-size: 1.125rem;
+}
+
+/* .emptyState removed */
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 200, 83, 0.4);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(0, 200, 83, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(0, 200, 83, 0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .hero {
+        padding: 2rem 1.5rem 5rem;
+        /* More breathability */
+    }
+
+    .title {
+        font-size: 2.5rem;
+        /* Slightly smaller for better wrapping */
+        letter-spacing: -0.02em;
+    }
+
+    .tagline {
+        font-size: 1.125rem;
+        padding: 0 1rem;
+        /* Prevent edge-to-edge text */
+    }
+
+    .activeBatchCard {
+        padding: 1.5rem 1.25rem;
+        margin: 0 0.5rem;
+        /* Add margin to avoid edge touch */
+    }
+
+    .batchTitle {
+        font-size: 1.5rem;
+    }
+
+    .menuSection {
+        border-radius: 32px 32px 0 0;
+        padding-top: 2.5rem;
+        margin-top: -3rem;
+        /* More overlap */
+    }
+
+    .sectionTitle {
+        font-size: 1.75rem;
+    }
+}

@@ -1,0 +1,160 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    backdrop-filter: blur(2px);
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 400px;
+    background-color: var(--color-surface);
+    z-index: 50;
+    box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+
+    to {
+        transform: translateX(0);
+    }
+}
+
+.header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.closeBtn {
+    color: var(--color-text-muted);
+    padding: 0.5rem;
+    border-radius: var(--radius-md);
+    transition: background-color 0.2s;
+}
+
+.closeBtn:hover {
+    background-color: var(--color-background);
+    color: var(--color-text);
+}
+
+.items {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+}
+
+.emptyState {
+    text-align: center;
+    color: var(--color-text-muted);
+    margin-top: 4rem;
+}
+
+.item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.item:last-child {
+    border-bottom: none;
+}
+
+.itemInfo {
+    flex: 1;
+}
+
+.itemName {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.itemPrice {
+    color: var(--color-primary);
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.qtyBtn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    transition: all 0.2s;
+}
+
+.qtyBtn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.qtyBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.quantity {
+    font-weight: 600;
+    min-width: 1.5rem;
+    text-align: center;
+}
+
+.removeBtn {
+    margin-left: 0.5rem;
+    color: var(--color-text-muted);
+    padding: 0.25rem;
+}
+
+.removeBtn:hover {
+    color: var(--color-error);
+}
+
+.footer {
+    padding: var(--spacing-lg);
+    border-top: 1px solid var(--color-border);
+    background-color: var(--color-background);
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.totalPrice {
+    color: var(--color-primary);
+}

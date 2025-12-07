@@ -1,0 +1,89 @@
+.section {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.timelineHistory {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+}
+
+.historyItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  position: relative;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.historyItemActive {
+  opacity: 1;
+}
+
+.historyDot {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e5e7eb;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.historyContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.historyLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.historyEstimate {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.historyTime {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.historyLine {
+  position: absolute;
+  left: 13px;
+  top: calc(0.75rem + 28px);
+  width: 2px;
+  height: calc(100% - 0.75rem - 14px);
+  background: #e5e7eb;
+  z-index: 1;
+}
+
+.historyItem:last-child .historyLine {
+  display: none;
+}

@@ -1,0 +1,91 @@
+.progressContainer {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.progressSteps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+}
+
+.progressStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.progressDot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  border: 2px solid #e5e7eb;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.progressStepActive .progressDot {
+  color: white;
+}
+
+.progressLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.progressEstimate {
+  font-size: 0.65rem;
+  color: #6b7280;
+  text-align: center;
+  margin-top: -0.25rem;
+}
+
+.progressLine {
+  position: absolute;
+  top: 14px;
+  /* Center vertically relative to dot (28px height / 2) */
+  left: 50%;
+  /* Start from center of current dot */
+  width: 100%;
+  /* Span exactly to the next dot's center */
+  height: 3px;
+  /* Thicker line */
+  z-index: -1;
+  /* Behind the dots */
+}
+
+.lineBackground {
+  position: absolute;
+  inset: 0;
+  background-color: #e5e7eb;
+}
+
+.lineActive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.progressStep:last-child .progressLine {
+  display: none;
+}

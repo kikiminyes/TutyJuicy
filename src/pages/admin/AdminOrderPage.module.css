@@ -1,0 +1,812 @@
+/* ===== HEADER & CONTROLS ===== */
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Row 1: Title & View Toggle */
+.topRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.viewToggle {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    gap: 0.25rem;
+    border: 1px solid #e2e8f0;
+}
+
+.toggleOption {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggleOption:hover {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.activeOption {
+    background: white !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+}
+
+/* Row 2: Filter Tabs */
+.filterContainer {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.filterContainer::-webkit-scrollbar {
+    display: none;
+}
+
+.filterTab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s;
+    cursor: pointer;
+    color: #64748b;
+}
+
+.filterTab:hover {
+    background: #f8fafc;
+    color: #334155;
+    transform: translateY(-1px);
+}
+
+.activeTab {
+    font-weight: 600;
+    border-color: transparent !important;
+    color: white !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Row 3: Action Toolbar */
+.toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+}
+
+.toolbarRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.bulkActionRow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.leftToolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.rightToolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1;
+}
+
+.selectAllBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.selectAllBtn:hover {
+    color: #334155;
+    background: #f1f5f9;
+}
+
+.activeSelectAll {
+    color: #0284c7;
+    background: #e0f2fe;
+    font-weight: 600;
+}
+
+.allOrdersBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.allOrdersBtn:hover {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #cbd5e1;
+}
+
+.activeAllBtn {
+    background: #0f172a !important;
+    color: white !important;
+    border-color: #0f172a !important;
+}
+
+.bulkActionGroup {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.bulkActionBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.5rem 0.875rem;
+    border-radius: 8px;
+    background: #0f172a;
+    border: none;
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bulkActionBtn:hover:not(:disabled) {
+    background: #1e293b;
+    transform: translateY(-1px);
+}
+
+.bulkActionBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.deleteBtn {
+    background: #ef4444;
+}
+
+.deleteBtn:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+/* ACTIVE BACKGROUND OVERRIDES */
+/* When active, use the solid color from the variable map logic */
+/* Actually, since we combine classes in TSX, e.g., ".filterTab .status_pending"
+   The .status_pending class sets bg, color, border.
+   We need to override that behavior specifically for Active Tabs to be solid.
+*/
+
+/* Status Colors for Tabs & Chips */
+
+/* Base Status Styles - Used for Chips and Inactive Tabs (Light bg) */
+.status_pending_payment {
+    background: #fff7ed;
+    color: #c2410c;
+    border-color: #fdba74;
+}
+
+.activeTab.status_pending_payment {
+    background: #f97316 !important;
+    /* Solid Orange */
+    color: white !important;
+}
+
+.status_payment_received {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #93c5fd;
+}
+
+.activeTab.status_payment_received {
+    background: #3b82f6 !important;
+    /* Solid Blue */
+    color: white !important;
+}
+
+.status_preparing {
+    background: #f5f3ff;
+    color: #7c3aed;
+    border-color: #c4b5fd;
+}
+
+.activeTab.status_preparing {
+    background: #8b5cf6 !important;
+    /* Solid Purple */
+    color: white !important;
+}
+
+.status_ready {
+    background: #ecfdf5;
+    color: #047857;
+    border-color: #6ee7b7;
+}
+
+.activeTab.status_ready {
+    background: #10b981 !important;
+    /* Solid Green */
+    color: white !important;
+}
+
+.status_picked_up {
+    background: #f0fdf4;
+    color: #15803d;
+    border-color: #86efac;
+}
+
+.activeTab.status_picked_up {
+    background: #22c55e !important;
+    /* Solid Green */
+    color: white !important;
+}
+
+.status_cancelled {
+    background: #fef2f2;
+    color: #b91c1c;
+    border-color: #fca5a5;
+}
+
+.activeTab.status_cancelled {
+    background: #ef4444 !important;
+    /* Solid Red */
+    color: white !important;
+}
+
+
+/* ===== ORDER LIST & CARDS ===== */
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.orderCard {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+}
+
+.orderCard::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: transparent;
+    transition: background 0.2s;
+}
+
+/* Link card side color to status classes directly */
+.orderCard.status_pending_payment::before {
+    background: #f97316;
+}
+
+.orderCard.status_payment_received::before {
+    background: #3b82f6;
+}
+
+.orderCard.status_preparing::before {
+    background: #8b5cf6;
+}
+
+.orderCard.status_ready::before {
+    background: #10b981;
+}
+
+.orderCard.status_picked_up::before {
+    background: #22c55e;
+}
+
+.orderCard.status_cancelled::before {
+    background: #ef4444;
+}
+
+
+.orderCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+    border-color: #cbd5e1;
+}
+
+.cardContent {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    gap: 1.5rem;
+}
+
+.orderInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.orderHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.orderId {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.customerInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.customerName {
+    font-weight: 500;
+    color: #334155;
+}
+
+.dot {
+    width: 3px;
+    height: 3px;
+    background: #cbd5e1;
+    border-radius: 50%;
+}
+
+.date {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+}
+
+/* ===== CARD RIGHT SIDE ===== */
+.cardRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.price {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.viewBtn {
+    font-size: 0.75rem;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.orderCard:hover .viewBtn {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.paymentMethodBadge {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+}
+
+.statusBadge {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    /* Uses same color classes as base */
+}
+
+/* ===== EMPTY STATE ===== */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    border: 1px dashed #e2e8f0;
+    text-align: center;
+}
+
+.emptyIcon {
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 50%;
+    width: 64px;
+    height: 64px;
+}
+
+.emptyTitle {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 0 0.5rem 0;
+}
+
+.emptyText {
+    color: #64748b;
+    margin: 0;
+    font-size: 0.9375rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 640px) {
+    .cardContent {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .cardRight {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid #f1f5f9;
+        margin-top: 1rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .topControls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .allOrdersBtn {
+        justify-content: center;
+    }
+
+    .viewToggle {
+        width: 100%;
+        display: flex;
+    }
+
+    .toggleOption {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .rightControls {
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+    }
+
+    .selectAllBtn {
+        justify-content: center;
+    }
+
+    .bulkActionBar {
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        width: auto !important;
+        transform: translateY(150%);
+    }
+
+    .showBulkBar {
+        transform: translateY(0);
+    }
+
+    .bulkBarContent {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+
+    .bulkActions {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+    }
+}
+
+/* ===== NEW BULK ACTIONS STYLING ===== */
+
+.rightControls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.selectAllBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: 9999px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.selectAllBtn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.activeSelectAll {
+    background: #e0f2fe;
+    /* Light blue bg */
+    border-color: #38bdf8;
+    color: #0284c7;
+    font-weight: 600;
+}
+
+/* Checkbox & Selection Area on Card */
+.selectionArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0);
+    /* Transparent initially */
+    transition: background 0.2s;
+}
+
+.selectionArea:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.checkbox {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid #cbd5e1;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.selectionArea:hover .checkbox {
+    border-color: #94a3b8;
+}
+
+.checked {
+    background: #3b82f6;
+    border-color: #3b82f6 !important;
+}
+
+/* Adjust card content when having left checkbox area */
+.orderCard {
+    /* Existing styles remain + padding override */
+    padding-left: 2rem;
+    position: relative;
+}
+
+/* Override existing card padding to make room for checkbox */
+.cardContent {
+    padding-left: 3rem;
+    /* Push content to right */
+}
+
+.selectedCard {
+    background: #f0f9ff !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1), 0 2px 4px -1px rgba(59, 130, 246, 0.06);
+}
+
+/* ===== FIXED BOTTOM BULK ACTION BAR ===== */
+.bulkActionBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0f172a;
+    padding: 1rem 1.5rem;
+    z-index: 100;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.bulkBarContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.selectedCount {
+    color: white;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.bulkBarActions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.bulkBarBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    background: #3b82f6;
+    border: none;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.bulkBarBtn:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+.bulkBarBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.deleteBtnBar {
+    background: #ef4444;
+}
+
+.deleteBtnBar:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+@media (max-width: 640px) {
+    .bulkActionBar {
+        padding: 0.875rem 1rem;
+    }
+
+    .bulkBarContent {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .selectedCount {
+        font-size: 0.8125rem;
+    }
+
+    .bulkBarActions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .bulkBarBtn {
+        flex: 1;
+        justify-content: center;
+        padding: 0.625rem 1rem;
+        font-size: 0.8125rem;
+    }
+}
+
+/* End of file */
