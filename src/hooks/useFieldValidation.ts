@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import useDebounce from './useDebounce';
 import type { ValidationResult } from '../utils/validation';
 
