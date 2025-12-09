@@ -20,10 +20,14 @@ interface OrderItem {
     } | null;
 }
 
+interface OrderWithItems extends Order {
+    order_items?: OrderItem[];
+}
+
 export const PaymentPage: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
     const navigate = useNavigate();
-    const [order, setOrder] = useState<Order | null>(null);
+    const [order, setOrder] = useState<OrderWithItems | null>(null);
     const [displayTotal, setDisplayTotal] = useState<number>(0);
     const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -432,7 +436,7 @@ export const PaymentPage: React.FC = () => {
                     </div>
 
                     <div className={styles.itemsList}>
-                        {(order.order_items as unknown as OrderItem[])?.map((item, index) => (
+                        {order.order_items?.map((item, index) => (
                             <div key={index} className={styles.itemRow}>
                                 <div className={styles.itemMeta}>
                                     <span className={styles.itemQty}>{item.quantity}x</span>

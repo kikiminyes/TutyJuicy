@@ -43,7 +43,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 const menuIds = parsedCart.map(item => item.id);
                 const { data: validMenus } = await supabase
                     .from('menus')
-                    .select('id, name, price, description, image_url, created_at, updated_at')
+                    .select('id, name, price, description, image_url, size, created_at, updated_at')
                     .in('id', menuIds);
 
                 if (!validMenus || validMenus.length === 0) {
