@@ -17,7 +17,10 @@
     font-size: 1.875rem;
     font-weight: 800;
     margin: 0 0 0.5rem 0;
-    color: var(--color-text);
+    background: linear-gradient(135deg, #0f172a 0%, #0891b2 80%, #06b6d4 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     letter-spacing: -0.025em;
     font-family: var(--font-heading);
 }
@@ -55,8 +58,8 @@
 
 /* ===== BATCH CONTEXT CARD ===== */
 .batchContext {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 50%, #ecfeff 100%);
+    border: 1px solid rgba(8, 145, 178, 0.2);
     border-radius: var(--radius-lg);
     padding: 1.25rem;
     display: flex;
@@ -64,6 +67,17 @@
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+    box-shadow:
+        0 4px 16px rgba(8, 145, 178, 0.08),
+        0 0 0 1px rgba(8, 145, 178, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.batchContext:hover {
+    box-shadow:
+        0 8px 24px rgba(8, 145, 178, 0.12),
+        0 0 0 1px rgba(8, 145, 178, 0.1);
+    transform: translateY(-2px);
 }
 
 .batchInfo {
@@ -133,10 +147,25 @@
     font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    background: rgba(8, 145, 178, 0.05);
 }
 
 .viewBatchBtn:hover {
-    text-decoration: underline;
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    transform: translateX(4px);
+}
+
+.viewBatchBtn svg {
+    transition: transform 0.25s;
+}
+
+.viewBatchBtn:hover svg {
+    transform: translateX(4px);
 }
 
 /* ===== STATS GRID ===== */
@@ -154,11 +183,30 @@
     align-items: center;
     gap: 1rem;
     border: 1px solid var(--color-border);
-    transition: transform 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.statCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.5) 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .statCard:hover {
-    transform: translateY(-2px);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+.statCard:hover::before {
+    opacity: 1;
 }
 
 .statLink {
@@ -175,12 +223,16 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
 }
 
 .statContent {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
+    position: relative;
+    z-index: 1;
 }
 
 .statLabel {
@@ -199,8 +251,35 @@
 }
 
 .revenueCard {
-    background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%) !important;
-    border-color: #bbf7d0 !important;
+    background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%) !important;
+    border: 1px solid #86efac !important;
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.15);
+}
+
+.revenueCard:hover {
+    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25);
+}
+
+/* Orders Card - Blue gradient */
+.statsGrid> :nth-child(2) .statCard {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%) !important;
+    border: 1px solid #93c5fd !important;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}
+
+.statsGrid> :nth-child(2) .statCard:hover {
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.25);
+}
+
+/* Pending Card - Amber gradient */
+.statsGrid> :nth-child(3) .statCard {
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%) !important;
+    border: 1px solid #fcd34d !important;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15);
+}
+
+.statsGrid> :nth-child(3) .statCard:hover {
+    box-shadow: 0 12px 32px rgba(245, 158, 11, 0.25);
 }
 
 /* ===== TWO COLUMN GRID ===== */
@@ -362,7 +441,7 @@
     padding: 0.875rem 1.25rem;
     border-bottom: 1px solid var(--color-divider);
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .activityItem:last-child {
@@ -370,7 +449,9 @@
 }
 
 .activityItem:hover {
-    background: var(--color-surface-subtle);
+    background: linear-gradient(135deg, rgba(240, 253, 250, 0.5) 0%, rgba(236, 254, 255, 0.5) 100%);
+    transform: translateX(4px);
+    padding-left: 1.5rem;
 }
 
 .activityInfo {
@@ -440,6 +521,12 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
+    .pageHeader {
+        display: none;
+    }
+}
+
+@media (max-width: 1024px) {
     .statsGrid {
         grid-template-columns: 1fr;
     }

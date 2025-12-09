@@ -7,7 +7,7 @@ import { Dropdown, type DropdownItem } from '../../components/ui/Dropdown';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
 import {
     Plus, Edit, Package, Send, Lock, Copy, Trash2, Boxes,
-    Calendar, X, ShoppingBag, DollarSign, Archive
+    Calendar, X, ShoppingBag, DollarSign, Archive, Pencil, AlertTriangle, Check
 } from 'lucide-react';
 import styles from './AdminBatchPage.module.css';
 import toast from 'react-hot-toast';
@@ -24,6 +24,10 @@ export const AdminBatchPage: React.FC = () => {
     const [batchToEdit, setBatchToEdit] = useState<Batch | null>(null);
     const [batchForStockEdit, setBatchForStockEdit] = useState<Batch | null>(null);
     const [selectedBatch, setSelectedBatch] = useState<BatchWithStock | null>(null); // For detail modal
+
+    // Inline stock editing
+    const [editingStockId, setEditingStockId] = useState<string | null>(null);
+    const [editingStockValue, setEditingStockValue] = useState<number>(0);
 
     // Confirmation dialog
     const [confirmDialog, setConfirmDialog] = useState<{
@@ -43,7 +47,12 @@ export const AdminBatchPage: React.FC = () => {
                     *,
                     batch_stocks (
                         quantity_available,
-                        quantity_reserved
+                        quantity_reserved,
+                        menus (
+                            id,
+                            name,
+                            image_url
+                        )
                     )
                 `)
                 .order('created_at', { ascending: false });
@@ -241,6 +250,42 @@ export const AdminBatchPage: React.FC = () => {
         });
     };
 
+    // Inline stock update
+    const handleInlineStockSave = async (menuId: string, newTotal: number, reserved: number) => {
+        // Can't reduce below reserved
+        if (newTotal < reserved) {
+            toast.error(`Cannot set stock below reserved amount (${reserved})`);
+            return;
+        }
+
+        const newAvailable = newTotal - reserved;
+
+        try {
+            const { error } = await supabase
+                .from('batch_stocks')
+                .update({ quantity_available: newAvailable })
+                .eq('batch_id', selectedBatch?.id)
+                .eq('menu_id', menuId);
+
+            if (error) throw error;
+
+            toast.success('Stock updated!');
+            setEditingStockId(null);
+            fetchBatches();
+
+            // Update selectedBatch locally
+            if (selectedBatch) {
+                const updatedStocks = (selectedBatch as any).batch_stocks.map((s: any) =>
+                    s.menus?.id === menuId ? { ...s, quantity_available: newAvailable } : s
+                );
+                setSelectedBatch({ ...selectedBatch, batch_stocks: updatedStocks } as any);
+            }
+        } catch (error: any) {
+            toast.error('Failed to update stock');
+            console.error(error);
+        }
+    };
+
     // Get dropdown menu items
     const getMenuItems = (batch: Batch): DropdownItem[] => {
         const items: DropdownItem[] = [
@@ -248,7 +293,8 @@ export const AdminBatchPage: React.FC = () => {
             { label: 'Duplicate', icon: Copy, onClick: () => handleDuplicate(batch) }
         ];
 
-        if (batch.status === 'draft') {
+        // Allow delete for draft and closed batches
+        if (batch.status === 'draft' || batch.status === 'closed') {
             items.push({
                 label: 'Delete Batch',
                 icon: Trash2,
@@ -285,12 +331,7 @@ export const AdminBatchPage: React.FC = () => {
         return { text: `${diffDays} days`, class: styles.countdown };
     };
 
-    // Get progress bar class
-    const getProgressClass = (percent: number) => {
-        if (percent >= 80) return styles.progressFillHigh;
-        if (percent >= 50) return styles.progressFillLow;
-        return styles.progressFill;
-    };
+
 
     // Get status badge class
     const getStatusBadgeClass = (status: string) => {
@@ -473,19 +514,19 @@ export const AdminBatchPage: React.FC = () => {
                 />
             )}
 
-            {/* Batch Detail Modal */}
+            {/* Batch Detail Drawer */}
             {selectedBatch && (
                 <div className={styles.detailOverlay} onClick={() => setSelectedBatch(null)}>
                     <div className={styles.detailModal} onClick={(e) => e.stopPropagation()}>
                         <div className={styles.detailHeader}>
-                            <div>
+                            <div className={styles.detailHeaderInfo}>
                                 <span className={`${styles.statusBadge} ${getStatusBadgeClass(selectedBatch.status)}`}>
                                     {selectedBatch.status === 'open' && <span className={styles.liveDot}></span>}
                                     {selectedBatch.status}
                                 </span>
                                 <h2 className={styles.detailTitle}>{selectedBatch.title}</h2>
                                 <div className={styles.detailDate}>
-                                    <Calendar size={14} />
+                                    <Calendar size={16} />
                                     {formatDate(selectedBatch.delivery_date)}
                                     {selectedBatch.status !== 'closed' && (
                                         <span className={`${styles.countdownBadge} ${getCountdown(selectedBatch.delivery_date).class}`}>
@@ -499,73 +540,131 @@ export const AdminBatchPage: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Stats */}
-                        <div className={styles.detailStats}>
-                            <div className={styles.detailStatItem}>
-                                <ShoppingBag size={20} />
-                                <div>
-                                    <span className={styles.detailStatValue}>{selectedBatch.order_count || 0}</span>
-                                    <span className={styles.detailStatLabel}>Orders</span>
+                        <div className={styles.detailBody}>
+                            {/* Summary Stats */}
+                            <div className={styles.summaryRow}>
+                                <div className={styles.summaryItem}>
+                                    <ShoppingBag size={16} />
+                                    <span className={styles.summaryValue}>{selectedBatch.order_count || 0}</span>
+                                    <span className={styles.summaryLabel}>Orders</span>
                                 </div>
-                            </div>
-                            <div className={styles.detailStatItem}>
-                                <DollarSign size={20} />
-                                <div>
-                                    <span className={styles.detailStatValue}>
+                                <div className={styles.summaryDivider} />
+                                <div className={styles.summaryItem}>
+                                    <DollarSign size={16} />
+                                    <span className={styles.summaryValue}>
                                         {new Intl.NumberFormat('id-ID', {
-                                            notation: 'compact',
-                                            compactDisplay: 'short'
+                                            style: 'currency',
+                                            currency: 'IDR',
+                                            maximumFractionDigits: 0
                                         }).format(selectedBatch.total_revenue || 0)}
                                     </span>
-                                    <span className={styles.detailStatLabel}>Omset</span>
+                                    <span className={styles.summaryLabel}>Omset</span>
                                 </div>
                             </div>
-                            <div className={styles.detailStatItem}>
-                                <Package size={20} />
-                                <div>
-                                    <span className={styles.detailStatValue}>{selectedBatch.total_items || 0}</span>
-                                    <span className={styles.detailStatLabel}>Items</span>
+
+                            {/* Stock Items List */}
+                            <div className={styles.stockSection}>
+                                <div className={styles.stockSectionHeader}>
+                                    <Package size={16} />
+                                    <span>Stock Details</span>
+                                    <span className={styles.stockBadge}>
+                                        {(selectedBatch as any).total_reserved || 0} / {selectedBatch.total_quantity || 0} reserved
+                                    </span>
+                                </div>
+                                <div className={styles.stockList}>
+                                    {(selectedBatch as any).batch_stocks?.map((stock: any) => {
+                                        const total = stock.quantity_available + stock.quantity_reserved;
+                                        const reserved = stock.quantity_reserved;
+                                        const available = stock.quantity_available;
+                                        const percent = total > 0 ? (reserved / total) * 100 : 0;
+                                        const isLowStock = available > 0 && available <= 3;
+                                        const isEditing = editingStockId === stock.menus?.id;
+
+                                        return (
+                                            <div key={stock.menus?.id || Math.random()} className={styles.stockItem}>
+                                                {stock.menus?.image_url ? (
+                                                    <img src={stock.menus.image_url} alt={stock.menus.name} className={styles.stockItemImage} />
+                                                ) : (
+                                                    <div className={styles.stockItemPlaceholder}>
+                                                        <Package size={16} />
+                                                    </div>
+                                                )}
+                                                <div className={styles.stockItemInfo}>
+                                                    <div className={styles.stockItemHeader}>
+                                                        <span className={styles.stockItemName}>{stock.menus?.name || 'Unknown'}</span>
+                                                        {isLowStock && (
+                                                            <span className={styles.lowStockBadge}>
+                                                                <AlertTriangle size={12} />
+                                                                Low
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className={styles.stockItemBar}>
+                                                        <div
+                                                            className={`${styles.stockItemBarFill} ${percent >= 80 ? styles.barHigh : ''}`}
+                                                            style={{ width: `${percent}%` }}
+                                                        />
+                                                    </div>
+                                                    <div className={styles.stockItemMeta}>
+                                                        <span className={styles.metaAvailable}>Available: {available}</span>
+                                                        <span className={styles.metaReserved}>Reserved: {reserved}</span>
+                                                    </div>
+                                                </div>
+                                                <div className={styles.stockItemActions}>
+                                                    {isEditing ? (
+                                                        <div className={styles.editStockForm}>
+                                                            <input
+                                                                type="number"
+                                                                min={reserved}
+                                                                value={editingStockValue}
+                                                                onChange={(e) => setEditingStockValue(Math.max(reserved, parseInt(e.target.value) || 0))}
+                                                                className={styles.editStockInput}
+                                                                autoFocus
+                                                            />
+                                                            <button
+                                                                className={styles.editStockSave}
+                                                                onClick={() => handleInlineStockSave(stock.menus?.id, editingStockValue, reserved)}
+                                                            >
+                                                                <Check size={14} />
+                                                            </button>
+                                                            <button
+                                                                className={styles.editStockCancel}
+                                                                onClick={() => setEditingStockId(null)}
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className={styles.stockItemQty}>
+                                                                <span className={styles.stockItemReserved}>{reserved}</span>
+                                                                <span className={styles.stockItemTotal}>/ {total}</span>
+                                                            </div>
+                                                            <button
+                                                                className={styles.editStockBtn}
+                                                                onClick={() => {
+                                                                    setEditingStockId(stock.menus?.id);
+                                                                    setEditingStockValue(total);
+                                                                }}
+                                                                title="Edit stock"
+                                                            >
+                                                                <Pencil size={14} />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {!(selectedBatch as any).batch_stocks?.length && (
+                                        <div className={styles.emptyStock}>No stock items</div>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Stock Progress */}
-                        {(() => {
-                            const totalStock = selectedBatch.total_quantity || 0;
-                            const reserved = (selectedBatch as any).total_reserved || 0;
-                            const stockPercent = totalStock > 0 ? Math.round((reserved / totalStock) * 100) : 0;
-                            return totalStock > 0 ? (
-                                <div className={styles.detailStock}>
-                                    <div className={styles.stockHeader}>
-                                        <span>Stock Reserved</span>
-                                        <span className={styles.stockPercent}>{stockPercent}%</span>
-                                    </div>
-                                    <div className={styles.progressBar}>
-                                        <div
-                                            className={getProgressClass(stockPercent)}
-                                            style={{ width: `${stockPercent}%` }}
-                                        />
-                                    </div>
-                                    <div className={styles.stockMeta}>
-                                        {reserved} / {totalStock} items
-                                    </div>
-                                </div>
-                            ) : null;
-                        })()}
-
-                        {/* Actions */}
+                        {/* Actions - Only status actions */}
                         <div className={styles.detailActions}>
-                            <button
-                                className={styles.stockBtnLarge}
-                                onClick={() => {
-                                    setBatchForStockEdit(selectedBatch);
-                                    setSelectedBatch(null);
-                                }}
-                            >
-                                <Package size={18} />
-                                Manage Stock
-                            </button>
-
                             {selectedBatch.status === 'draft' && (
                                 <button
                                     className={`${styles.actionBtnLarge} ${styles.btnPublish}`}
@@ -590,6 +689,13 @@ export const AdminBatchPage: React.FC = () => {
                                     <Lock size={18} />
                                     Close Batch
                                 </button>
+                            )}
+
+                            {selectedBatch.status === 'closed' && (
+                                <div className={styles.closedInfo}>
+                                    <Archive size={16} />
+                                    This batch has been archived
+                                </div>
                             )}
                         </div>
                     </div>

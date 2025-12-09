@@ -14,21 +14,22 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   border: 2px solid #e5e7eb;
-  border-radius: 0.75rem;
+  border-radius: 12px;
   background: white;
   cursor: pointer;
   transition: all 0.2s;
   font-weight: 500;
   text-align: left;
+  min-height: 72px;
 }
 
 .methodCard:hover:not(:disabled) {
   border-color: #ff7f50;
   background: #fff8f5;
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(255, 127, 80, 0.15);
 }
 
 .methodCard:disabled {
@@ -40,6 +41,9 @@
   font-size: 1.75rem;
   color: #ff7f50;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .methodInfo {
@@ -147,6 +151,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

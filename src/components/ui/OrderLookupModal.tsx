@@ -47,10 +47,30 @@ export const OrderLookupModal: React.FC<OrderLookupModalProps> = ({ isOpen, onCl
         try {
             const normalizedPhone = normalizePhone(phone);
 
+            // First, get the currently open batch
+            const { data: openBatch, error: batchError } = await supabase
+                .from('batches')
+                .select('id')
+                .eq('status', 'open')
+                .single();
+
+            if (batchError && batchError.code !== 'PGRST116') {
+                throw batchError;
+            }
+
+            if (!openBatch) {
+                // No open batch - show message
+                setOrders([]);
+                setError('Tidak ada batch yang sedang buka saat ini');
+                return;
+            }
+
+            // Search orders only from the open batch
             const { data, error: queryError } = await supabase
                 .from('orders')
                 .select('id, customer_name, total_amount, status, created_at')
                 .eq('customer_phone', normalizedPhone)
+                .eq('batch_id', openBatch.id)
                 .order('created_at', { ascending: false });
 
             if (queryError) throw queryError;

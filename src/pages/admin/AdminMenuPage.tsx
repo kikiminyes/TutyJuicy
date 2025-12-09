@@ -4,13 +4,14 @@ import type { Menu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
-import { Plus, Edit, Trash2, Image as ImageIcon, UtensilsCrossed } from 'lucide-react';
+import { Plus, Edit, Trash2, Image as ImageIcon, UtensilsCrossed, Search } from 'lucide-react';
 import styles from './AdminMenuPage.module.css';
 import toast from 'react-hot-toast';
 import { MenuFormModal } from './MenuFormModal';
 
 export const AdminMenuPage: React.FC = () => {
     const [menus, setMenus] = useState<Menu[]>([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
@@ -37,6 +38,11 @@ export const AdminMenuPage: React.FC = () => {
     useEffect(() => {
         fetchMenus();
     }, []);
+
+    const filteredMenus = menus.filter(menu =>
+        menu.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        menu.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleDeleteClick = async (menu: Menu) => {
         // Check if menu is used in any active batches (draft or open)
@@ -129,59 +135,95 @@ export const AdminMenuPage: React.FC = () => {
     return (
         <div>
             <div className={styles.header}>
-                <h1 className={styles.title}>Menu Management</h1>
-                <Button onClick={handleCreate}>
-                    <Plus size={20} />
-                    Add New Menu
-                </Button>
-            </div>
-
-            {menus.length === 0 ? (
-                <div className={styles.emptyState}>
-                    <UtensilsCrossed size={48} className={styles.emptyIcon} />
-                    <h3 className={styles.emptyTitle}>No menu items yet</h3>
-                    <p className={styles.emptyText}>
-                        Add your first menu item to start receiving orders.
-                    </p>
+                <div className={styles.titleSection}>
+                    <h1 className={styles.title}>Menu Management</h1>
+                    <p className={styles.subtitle}>Manage your juice menu items and pricing</p>
+                </div>
+                <div className={styles.actions}>
                     <Button onClick={handleCreate}>
                         <Plus size={20} />
-                        Add First Menu
+                        Add New Menu
                     </Button>
                 </div>
-            ) : (
-            <div className={styles.grid}>
-                {menus.map((menu) => (
-                    <Card key={menu.id} className={styles.menuCard}>
-                        <div className={styles.imageContainer}>
-                            {menu.image_url ? (
-                                <img src={menu.image_url} alt={menu.name} className={styles.image} />
-                            ) : (
-                                <div className={styles.placeholderImage}>
-                                    <ImageIcon size={40} />
-                                </div>
-                            )}
-                        </div>
-
-                        <div className={styles.content}>
-                            <h3 className={styles.name}>{menu.name}</h3>
-                            <p className={styles.price}>
-                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(menu.price)}
-                            </p>
-                            <p className={styles.description}>{menu.description}</p>
-
-                            <div className={styles.actions}>
-                                <Button variant="outline" size="sm" onClick={() => handleEdit(menu)}>
-                                    <Edit size={16} />
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => handleDeleteClick(menu)} className={styles.deleteBtn}>
-                                    <Trash2 size={16} />
-                                </Button>
-                            </div>
-                        </div>
-                    </Card>
-                ))}
             </div>
+
+            <div className={styles.controls}>
+                <div className={styles.searchWrapper}>
+                    <Search className={styles.searchIcon} size={20} />
+                    <input
+                        type="text"
+                        placeholder="Search menu items..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className={styles.searchInput}
+                    />
+                </div>
+            </div>
+
+            {filteredMenus.length === 0 ? (
+                <div className={styles.emptyState}>
+                    <div className={styles.emptyIconWrapper}>
+                        <UtensilsCrossed size={40} />
+                    </div>
+                    <h3 className={styles.emptyTitle}>
+                        {searchTerm ? 'No matching menus found' : 'No menu items yet'}
+                    </h3>
+                    <p className={styles.emptyText}>
+                        {searchTerm
+                            ? `We couldn't find any menu items matching "${searchTerm}". Try a different search term.`
+                            : 'Add your first menu item to start receiving orders.'}
+                    </p>
+                    {!searchTerm && (
+                        <Button onClick={handleCreate}>
+                            <Plus size={20} />
+                            Add First Menu
+                        </Button>
+                    )}
+                </div>
+            ) : (
+                <div className={styles.grid}>
+                    {filteredMenus.map((menu) => (
+                        <Card key={menu.id} className={styles.menuCard}>
+                            <div className={styles.imageContainer}>
+                                {menu.image_url ? (
+                                    <img src={menu.image_url} alt={menu.name} className={styles.image} />
+                                ) : (
+                                    <div className={styles.placeholderImage}>
+                                        <ImageIcon size={40} />
+                                    </div>
+                                )}
+                                <div className={styles.priceTag}>
+                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(menu.price)}
+                                </div>
+                            </div>
+
+                            <div className={styles.content}>
+                                <div className={styles.titleRow}>
+                                    <h3 className={styles.name}>{menu.name}</h3>
+                                    {menu.size && <span className={styles.sizeInfo}>{menu.size}</span>}
+                                </div>
+                                <p className={styles.description}>{menu.description}</p>
+
+                                <div className={styles.cardActions}>
+                                    <button className={styles.editBtn} onClick={() => handleEdit(menu)}>
+                                        <Edit size={16} />
+                                        Edit
+                                    </button>
+                                    <button className={styles.deleteBtn} onClick={() => handleDeleteClick(menu)}>
+                                        <Trash2 size={16} />
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </Card>
+                    ))}
+                </div>
             )}
+
+            {/* Mobile FAB for adding new menu */}
+            <button className={styles.fab} onClick={handleCreate} aria-label="Add new menu">
+                <Plus size={24} />
+            </button>
 
             {isModalOpen && (
                 <MenuFormModal

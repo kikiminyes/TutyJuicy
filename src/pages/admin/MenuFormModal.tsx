@@ -19,9 +19,11 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
         price: '',
         description: '',
         image_url: '',
+        size: '',
     });
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
 
     useEffect(() => {
         if (menuToEdit) {
@@ -30,18 +32,46 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                 price: menuToEdit.price.toString(),
                 description: menuToEdit.description || '',
                 image_url: menuToEdit.image_url || '',
+                size: menuToEdit.size || '',
             });
         } else {
-            setFormData({ name: '', price: '', description: '', image_url: '' });
+            setFormData({ name: '', price: '', description: '', image_url: '', size: '' });
         }
     }, [menuToEdit]);
 
     if (!isOpen) return null;
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || e.target.files.length === 0) return;
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    };
 
-        const file = e.target.files[0];
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileUpload(files[0]);
+        }
+    };
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleFileUpload(e.target.files[0]);
+        }
+    };
+
+    const handleFileUpload = async (file: File) => {
+        if (!file.type.startsWith('image/')) {
+            toast.error('Please upload an image file');
+            return;
+        }
+
         setIsUploading(true);
 
         try {
@@ -87,6 +117,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                 price,
                 description: formData.description.trim(),
                 image_url: formData.image_url,
+                size: formData.size.trim() || null,
             };
 
             if (menuToEdit) {
@@ -114,16 +145,59 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
     };
 
     return (
-        <div className={styles.overlay}>
-            <div className={styles.modal}>
+        <div className={styles.overlay} onClick={onClose}>
+            <div className={styles.modal} onClick={e => e.stopPropagation()}>
                 <div className={styles.header}>
-                    <h2 className={styles.title}>{menuToEdit ? 'Edit Menu' : 'Add New Menu'}</h2>
+                    <h2 className={styles.title}>{menuToEdit ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
                     <button onClick={onClose} className={styles.closeBtn}>
                         <X size={24} />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
+                    <div className={styles.formGroup}>
+                        <label>Menu Image</label>
+                        <div
+                            className={`${styles.imageUpload} ${isDragging ? styles.dragging : ''}`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                        >
+                            {formData.image_url ? (
+                                <>
+                                    <img src={formData.image_url} alt="Preview" className={styles.preview} />
+                                    <label className={styles.uploadBtn}>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageChange}
+                                            hidden
+                                            disabled={isUploading}
+                                        />
+                                        Replace Image
+                                    </label>
+                                </>
+                            ) : (
+                                <label className={styles.uploadLabel}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleImageChange}
+                                        hidden
+                                        disabled={isUploading}
+                                    />
+                                    <div className={styles.uploadIconWrapper}>
+                                        <Upload size={24} />
+                                    </div>
+                                    <span className={styles.uploadText}>
+                                        {isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}
+                                    </span>
+                                    <span className={styles.uploadSubtext}>SVG, PNG, JPG or GIF (max. 5MB)</span>
+                                </label>
+                            )}
+                        </div>
+                    </div>
+
                     <div className={styles.formGroup}>
                         <label htmlFor="name">Name</label>
                         <input
@@ -132,6 +206,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             required
+                            placeholder="e.g. Mango Tango"
                             className={styles.input}
                         />
                     </div>
@@ -144,6 +219,19 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                             value={formData.price}
                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                             required
+                            placeholder="e.g. 15000"
+                            className={styles.input}
+                        />
+                    </div>
+
+                    <div className={styles.formGroup}>
+                        <label htmlFor="size">Size (Optional)</label>
+                        <input
+                            type="text"
+                            id="size"
+                            value={formData.size}
+                            onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                            placeholder="e.g. 350ml, 500ml"
                             className={styles.input}
                         />
                     </div>
@@ -154,37 +242,18 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                             id="description"
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="Describe your juice (ingredients, taste, benefits)..."
                             className={styles.textarea}
                         />
                     </div>
-
-                    <div className={styles.formGroup}>
-                        <label>Image</label>
-                        <div className={styles.imageUpload}>
-                            {formData.image_url && (
-                                <img src={formData.image_url} alt="Preview" className={styles.preview} />
-                            )}
-                            <label className={styles.uploadBtn}>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    hidden
-                                    disabled={isUploading}
-                                />
-                                <Upload size={20} />
-                                {isUploading ? 'Uploading...' : 'Upload Image'}
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className={styles.footer}>
-                        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-                        <Button type="submit" isLoading={isLoading} disabled={isUploading}>
-                            {menuToEdit ? 'Update' : 'Create'}
-                        </Button>
-                    </div>
                 </form>
+
+                <div className={styles.footer}>
+                    <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button type="submit" isLoading={isLoading} disabled={isUploading} onClick={handleSubmit}>
+                        {menuToEdit ? 'Save Changes' : 'Create Menu Item'}
+                    </Button>
+                </div>
             </div>
         </div>
     );

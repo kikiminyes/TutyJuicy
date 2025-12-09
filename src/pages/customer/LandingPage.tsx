@@ -83,6 +83,14 @@ export const LandingPage: React.FC = () => {
         <CustomerLayout>
             {/* Hero Section */}
             <div className={styles.hero}>
+                {/* Floating Decorations */}
+                <div className={styles.floatingDecor}>
+                    <div className={styles.bubble1} />
+                    <div className={styles.bubble2} />
+                    <div className={styles.bubble3} />
+                    <div className={styles.bubble4} />
+                </div>
+
                 <div className={styles.heroContent}>
                     <div className={styles.brandWrapper}>
                         <h1 className={styles.title}>TutyJuicy</h1>
@@ -106,10 +114,15 @@ export const LandingPage: React.FC = () => {
                             </div>
                         ) : (
                             <div className={styles.inactiveBatchCard}>
-                                <div className={styles.inactiveBadge}>
-                                    Pre-Order Closed
+                                <div className={styles.inactiveIconWrapper}>
+                                    <div className={styles.inactiveIconBg}></div>
+                                    <div className={styles.inactiveIcon}>⏳</div>
                                 </div>
-                                <p className={styles.inactiveText}>Nantikan batch berikutnya ya! 🍊</p>
+                                <h2 className={styles.inactiveTitle}>Yah, Batch Kali Ini Sudah Tutup</h2>
+                                <p className={styles.inactiveText}>
+                                    Tapi jangan khawatir! Stok segar akan segera hadir kembali.
+                                    Gabung <strong>Priority Waitlist</strong> biar kamu dapet info duluan pas kami open order lagi.
+                                </p>
                                 <button
                                     className={styles.notifyBtn}
                                     onClick={() => setShowWaitlist(true)}

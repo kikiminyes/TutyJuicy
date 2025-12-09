@@ -22,17 +22,17 @@
 
 /* Variants */
 .primary {
-    background: linear-gradient(135deg, #FF7F50 0%, #FF6347 100%);
-    /* Tropical Orange */
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+    /* Teal/Cyan to match customer theme */
     color: white;
-    box-shadow: 0 4px 6px -1px rgba(255, 127, 80, 0.2);
+    box-shadow: 0 4px 12px -2px rgba(8, 145, 178, 0.25);
     border: none;
 }
 
 .primary:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 8px -1px rgba(255, 127, 80, 0.3);
-    filter: brightness(1.05);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px rgba(8, 145, 178, 0.35);
+    filter: brightness(1.08);
 }
 
 .secondary {

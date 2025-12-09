@@ -9,7 +9,7 @@
 /* ===== SIDEBAR - LIGHT THEME ===== */
 .sidebar {
     width: 280px;
-    background: #ffffff;
+    background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 50%, #ecfeff 100%);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -18,8 +18,11 @@
     left: 0;
     z-index: 50;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 1px 0 0 #e2e8f0;
-    border-right: 1px solid #e2e8f0;
+    box-shadow:
+        2px 0 16px rgba(8, 145, 178, 0.08),
+        1px 0 0 rgba(8, 145, 178, 0.1);
+    border-right: 1px solid rgba(8, 145, 178, 0.15);
+    backdrop-filter: blur(10px);
 }
 
 .logo {
@@ -29,19 +32,23 @@
     justify-content: space-between;
     gap: 0.75rem;
     margin-bottom: 0.5rem;
-    border-bottom: 1px solid #f1f5f9;
+    border-bottom: 1px solid rgba(8, 145, 178, 0.1);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(240, 253, 250, 0.8) 100%);
 }
 
 .logo h2 {
     font-size: 1.5rem;
     font-weight: 800;
-    color: #1e293b;
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     margin: 0;
     letter-spacing: -0.025em;
 }
 
 .badge {
-    background: var(--color-primary);
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
     color: white;
     font-size: 0.625rem;
     padding: 0.25rem 0.625rem;
@@ -49,6 +56,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    box-shadow: 0 2px 8px rgba(8, 145, 178, 0.25);
 }
 
 /* ===== NAVIGATION ===== */
@@ -84,7 +92,7 @@
     color: #64748b;
     font-weight: 500;
     font-size: 0.9375rem;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     margin-bottom: 2px;
     border: none;
@@ -92,8 +100,10 @@
 }
 
 .navItem:hover {
-    background: #f8fafc;
-    color: #1e293b;
+    background: linear-gradient(135deg, rgba(240, 253, 250, 0.8) 0%, rgba(236, 254, 255, 0.8) 100%);
+    color: #0891b2;
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(8, 145, 178, 0.1);
 }
 
 .navItem svg {
@@ -101,26 +111,30 @@
     height: 20px;
     flex-shrink: 0;
     opacity: 0.7;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .navItem:hover svg {
     opacity: 1;
-    color: var(--color-primary);
+    color: #0891b2;
+    transform: scale(1.1);
 }
 
-/* Active state - teal accent */
+/* Active state - teal gradient accent */
 .active {
-    background: rgba(8, 145, 178, 0.08);
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
     color: var(--color-primary);
     font-weight: 600;
-    border-left: 3px solid var(--color-primary);
+    border-left: 3px solid transparent;
+    border-image: linear-gradient(180deg, #0891b2 0%, #06b6d4 100%) 1;
     padding-left: calc(1rem - 3px);
+    box-shadow: 0 2px 12px rgba(8, 145, 178, 0.15);
 }
 
 .active:hover {
-    background: rgba(8, 145, 178, 0.12);
+    background: linear-gradient(135deg, rgba(8, 145, 178, 0.18) 0%, rgba(6, 182, 212, 0.12) 100%);
     color: var(--color-primary-dark);
+    transform: translateX(4px);
 }
 
 .active svg {
@@ -137,23 +151,36 @@
     gap: 0.75rem;
     color: #64748b;
     border-radius: 10px;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 0.9375rem;
     font-weight: 500;
     background: transparent;
     border: 1px solid #e2e8f0;
     cursor: pointer;
+    position: relative;
 }
 
 .logoutBtn:hover {
-    background: #fef2f2;
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
     color: var(--color-error);
-    border-color: rgba(239, 68, 68, 0.3);
+    border: 1px solid transparent;
+    background-image:
+        linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%),
+        linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    box-shadow: 0 2px 12px rgba(239, 68, 68, 0.2);
+    transform: translateY(-2px);
 }
 
 .logoutBtn svg {
     width: 20px;
     height: 20px;
+    transition: transform 0.25s;
+}
+
+.logoutBtn:hover svg {
+    transform: rotate(-15deg);
 }
 
 /* ===== MAIN CONTENT ===== */
@@ -175,16 +202,80 @@
 .toggleBtn {
     display: none;
     position: fixed;
-    top: 1rem;
-    left: 1rem;
+    top: 0;
+    left: 0;
     z-index: 40;
-    padding: 0.75rem;
-    background: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    color: #1e293b;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg,
+            #0e7490 0%,
+            #475569 33%,
+            #0369a1 66%,
+            #d97706 100%);
+    background-size: 200% 200%;
+    animation: gradientShift 10s ease infinite;
+    border-radius: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    color: #ffffff;
     transition: all 0.2s;
-    border: 1px solid #e2e8f0;
+    border: none;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+    width: 100%;
+    align-items: center;
+    gap: 0.75rem;
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.pageTitle {
+    background: linear-gradient(135deg,
+            #ffffff 0%,
+            #f0f9ff 20%,
+            #fef3c7 40%,
+            #fce7f3 60%,
+            #f0f9ff 80%,
+            #ffffff 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    animation: shimmer 3s ease-in-out infinite;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+@keyframes shimmer {
+
+    0%,
+    100% {
+        background-position: 0% center;
+    }
+
+    50% {
+        background-position: 100% center;
+    }
+}
+
+/* Only show mobile header on screens < 1024px */
+@media (max-width: 1024px) {
+    .toggleBtn {
+        display: flex;
+    }
 }
 
 .closeBtn {
@@ -225,7 +316,7 @@
     .main {
         margin-left: 0;
         padding: 1.5rem;
-        padding-top: 5rem;
+        padding-top: 4.5rem;
     }
 
     .toggleBtn {

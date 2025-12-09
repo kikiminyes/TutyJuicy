@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { LayoutDashboard, Coffee, Layers, CreditCard, ShoppingBag, LogOut, Menu, X, Users, PhoneCall } from 'lucide-react';
 import styles from './AdminLayout.module.css';
@@ -7,7 +7,10 @@ import styles from './AdminLayout.module.css';
 
 export const AdminLayout: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -22,6 +25,48 @@ export const AdminLayout: React.FC = () => {
         setIsSidebarOpen(false);
     };
 
+    // Swipe gesture detection
+    const minSwipeDistance = 50;
+
+    const onTouchStart = (e: React.TouchEvent) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientX);
+    };
+
+    const onTouchMove = (e: React.TouchEvent) => {
+        setTouchEnd(e.targetTouches[0].clientX);
+    };
+
+    const onTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > minSwipeDistance;
+        const isRightSwipe = distance < -minSwipeDistance;
+
+        // Swipe from right edge to left = open sidebar
+        if (isLeftSwipe && touchStart > window.innerWidth - 50 && !isSidebarOpen) {
+            setIsSidebarOpen(true);
+        }
+
+        // Swipe from left to right = close sidebar
+        if (isRightSwipe && isSidebarOpen) {
+            setIsSidebarOpen(false);
+        }
+    };
+
+    // Get current page title based on route
+    const getPageTitle = () => {
+        const path = location.pathname;
+        if (path.includes('/dashboard')) return 'Dashboard';
+        if (path.includes('/orders')) return 'Orders';
+        if (path.includes('/menus')) return 'Menu Items';
+        if (path.includes('/batches')) return 'Batches';
+        if (path.includes('/waitlist')) return 'Waitlist';
+        if (path.includes('/settings')) return 'Payment';
+        if (path.includes('/contact')) return 'Admin Contact';
+        return 'Admin';
+    };
 
     const navSections = [
         {
@@ -49,10 +94,16 @@ export const AdminLayout: React.FC = () => {
     ];
 
     return (
-        <div className={styles.container}>
+        <div
+            className={styles.container}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+        >
             {/* Mobile Toggle Button */}
             <button className={styles.toggleBtn} onClick={toggleSidebar}>
                 <Menu size={20} />
+                <span className={styles.pageTitle}>{getPageTitle()}</span>
             </button>
 
             {/* Overlay for mobile */}

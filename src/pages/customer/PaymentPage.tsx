@@ -15,6 +15,9 @@ import { openWhatsApp } from '../../lib/whatsapp';
 interface OrderItem {
     quantity: number;
     price_per_item: number;
+    menus: {
+        name: string;
+    } | null;
 }
 
 export const PaymentPage: React.FC = () => {
@@ -40,7 +43,7 @@ export const PaymentPage: React.FC = () => {
                 // 1. Fetch Order
                 const { data: orderData, error: orderError } = await supabase
                     .from('orders')
-                    .select(`*, order_items (quantity, price_per_item)`)
+                    .select(`*, order_items (quantity, price_per_item, menus(name))`)
                     .eq('id', orderId)
                     .single();
 
@@ -419,13 +422,35 @@ export const PaymentPage: React.FC = () => {
                 <h1 className={styles.headerTitle}>Pembayaran</h1>
                 <button className={styles.contactBtn} onClick={handleContactAdmin} disabled={!activeAdminPhone}>
                     <MessageCircle size={18} />
-                    <span>Hubungi Bu Tuty</span>
                 </button>
             </header>
             <main className={styles.main}>
                 <div className={styles.orderInfo}>
-                    <span className={styles.orderId}>#{order.id.slice(0, 8)}</span>
-                    <span className={styles.orderTotal}>{formatPrice(displayTotal)}</span>
+                    <div className={styles.orderHeaderRow}>
+                        <span className={styles.orderLabel}>Order ID</span>
+                        <span className={styles.orderId}>#{order.id.slice(0, 8)}</span>
+                    </div>
+
+                    <div className={styles.itemsList}>
+                        {(order.order_items as unknown as OrderItem[])?.map((item, index) => (
+                            <div key={index} className={styles.itemRow}>
+                                <div className={styles.itemMeta}>
+                                    <span className={styles.itemQty}>{item.quantity}x</span>
+                                    <span className={styles.itemName}>{item.menus?.name || 'Menu Item'}</span>
+                                </div>
+                                <span className={styles.itemPrice}>
+                                    {formatPrice(item.quantity * item.price_per_item)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className={styles.divider} />
+
+                    <div className={styles.totalRow}>
+                        <span className={styles.totalLabel}>Total Tagihan</span>
+                        <span className={styles.orderTotal}>{formatPrice(displayTotal)}</span>
+                    </div>
                 </div>
                 {isCancelled ? (
                     <div className={styles.cancelledCard}>
@@ -440,10 +465,30 @@ export const PaymentPage: React.FC = () => {
                         <PaymentProgressTracker currentStep={currentStep} />
                         {/* Payment Method Selection */}
                         {isPending && !selectedPaymentMethod && (
-                            <PaymentMethodSelector
-                                onSelectMethod={handlePaymentMethodSelect}
-                                isLoading={isLoading}
-                            />
+                            <>
+                                <PaymentMethodSelector
+                                    onSelectMethod={handlePaymentMethodSelect}
+                                    isLoading={isLoading}
+                                />
+                                {/* Contact Admin Info Card */}
+                                <div className={styles.contactInfoCard}>
+                                    <div className={styles.contactInfoContent}>
+                                        <MessageCircle size={20} className={styles.contactInfoIcon} />
+                                        <div className={styles.contactInfoText}>
+                                            <h3>Butuh Bantuan?</h3>
+                                            <p>Hubungi Bu Tuty untuk pertanyaan seputar pembayaran</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        className={styles.contactInfoBtn}
+                                        onClick={handleContactAdmin}
+                                        disabled={!activeAdminPhone}
+                                    >
+                                        <MessageCircle size={16} />
+                                        <span>Hubungi Bu Tuty</span>
+                                    </button>
+                                </div>
+                            </>
                         )}
                         {/* Payment Proof Uploader */}
                         {isPending && (selectedPaymentMethod === 'qris' || selectedPaymentMethod === 'transfer') && !uploadSuccess && (
@@ -467,7 +512,10 @@ export const PaymentPage: React.FC = () => {
                                     <p className={styles.successHint}>Anda akan menerima notifikasi WhatsApp ketika pesanan siap.</p>
                                     {/* Only show change button if payment is still pending */}
                                     {isPending && (
-                                        <button className={styles.changeMethodBtn} onClick={handleChangePaymentMethod}>Ganti Metode</button>
+                                        <button className={styles.changeMethodBtn} onClick={handleChangePaymentMethod}>
+                                            <ArrowLeft size={16} style={{ marginRight: '0.5rem', display: 'inline-block', verticalAlign: 'text-bottom' }} />
+                                            Ganti Metode Pembayaran
+                                        </button>
                                     )}
                                 </div>
                             </section>
@@ -482,7 +530,10 @@ export const PaymentPage: React.FC = () => {
                                     <p className={styles.successHint}>Anda akan menerima notifikasi WhatsApp setelah pembayaran diverifikasi.</p>
                                     {/* Only show change button if payment is still pending (not yet verified by admin) */}
                                     {isPending && (
-                                        <button className={styles.changeMethodBtn} onClick={handleChangePaymentMethod}>Ganti Metode</button>
+                                        <button className={styles.changeMethodBtn} onClick={handleChangePaymentMethod}>
+                                            <ArrowLeft size={16} style={{ marginRight: '0.5rem', display: 'inline-block', verticalAlign: 'text-bottom' }} />
+                                            Ganti Metode Pembayaran
+                                        </button>
                                     )}
                                 </div>
                             </section>

@@ -103,12 +103,13 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
 
                             <div className={styles.content}>
                                 <div className={styles.header}>
-                                    <div className="flex justify-between items-start">
+                                    <div className={styles.titleRow}>
                                         <h3 className={styles.name}>{item.name}</h3>
-                                        <span className={styles.price}>
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price)}
-                                        </span>
+                                        {item.size && <span className={styles.sizeInfo}>{item.size}</span>}
                                     </div>
+                                    <span className={styles.price}>
+                                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price)}
+                                    </span>
                                     <p className={styles.description}>{item.description}</p>
                                 </div>
 

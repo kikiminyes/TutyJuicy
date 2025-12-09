@@ -16,34 +16,41 @@
   color: #1e293b;
 }
 
-/* Back Button */
+/* Back Button / Change Method */
 .backButtonContainer {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .backButton {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.375rem;
-  padding: 0.5rem 0.875rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  color: #64748b;
-  font-weight: 500;
-  font-size: 0.8125rem;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: #f0fdf4;
+  /* Very light teal/green tint */
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  color: #15803d;
+  /* Strong teal/green text */
+  font-weight: 600;
+  font-size: 0.9375rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .backButton:hover {
-  border-color: #ff7f50;
-  color: #ff7f50;
-  background: #fff8f5;
+  background: #dcfce7;
+  border-color: #86efac;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .backButton:active {
   transform: scale(0.98);
+  background: #bbf7d0;
 }
 
 /* QRIS Section */

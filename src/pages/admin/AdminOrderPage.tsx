@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Order } from '../../types';
-import { ClipboardList, Archive, Clock, CheckSquare, Square, Check, Trash2 } from 'lucide-react';
+import { ClipboardList, Archive, Clock, CheckSquare, Square, Check, Trash2, Search, X } from 'lucide-react';
 import styles from './AdminOrderPage.module.css';
 import toast from 'react-hot-toast';
 import { OrderDetailModal } from './OrderDetailModal';
@@ -19,6 +19,12 @@ export const AdminOrderPage: React.FC = () => {
     // Bulk Action State
     const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
     const [isBulkUpdating, setIsBulkUpdating] = useState(false);
+
+    // Search State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
+    const searchInputRef = React.useRef<HTMLInputElement>(null);
+    const searchDropdownRef = React.useRef<HTMLDivElement>(null);
 
     // Fetch current batch
     useEffect(() => {
@@ -51,7 +57,19 @@ export const AdminOrderPage: React.FC = () => {
             const { data, error } = await query;
 
             if (error) throw error;
-            setOrders(data || []);
+            let filteredOrders = data || [];
+
+            // Apply search filter locally
+            if (searchQuery.trim()) {
+                const query = searchQuery.toLowerCase().trim();
+                filteredOrders = filteredOrders.filter(order =>
+                    order.customer_name.toLowerCase().includes(query) ||
+                    order.customer_phone.includes(query) ||
+                    order.id.toLowerCase().includes(query)
+                );
+            }
+
+            setOrders(filteredOrders);
             // Clear selection when list changes/refreshes to avoid phantom selections
             setSelectedOrderIds(new Set());
         } catch (error) {
@@ -76,7 +94,24 @@ export const AdminOrderPage: React.FC = () => {
         return () => {
             subscription.unsubscribe();
         };
-    }, [filter, viewMode, currentBatchId]);
+    }, [filter, viewMode, currentBatchId, searchQuery]);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchDropdownRef.current && !searchDropdownRef.current.contains(event.target as Node)) {
+                setIsSearchDropdownOpen(false);
+            }
+        };
+
+        if (isSearchDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isSearchDropdownOpen]);
 
     const handleViewDetails = (order: Order) => {
         setSelectedOrder(order);
@@ -111,6 +146,45 @@ export const AdminOrderPage: React.FC = () => {
         setIsBulkUpdating(true);
         try {
             const ids = Array.from(selectedOrderIds);
+
+            // If cancelling orders, we need to restore stock first
+            if (newStatus === 'cancelled') {
+                // Get the orders being cancelled to know which batch they belong to
+                const ordersToCancel = orders.filter(o => ids.includes(o.id));
+
+                for (const order of ordersToCancel) {
+                    // Skip if already cancelled (to avoid double restore)
+                    if (order.status === 'cancelled') continue;
+
+                    // Get order items for this order
+                    const { data: orderItems, error: itemsError } = await supabase
+                        .from('order_items')
+                        .select('menu_id, quantity')
+                        .eq('order_id', order.id);
+
+                    if (itemsError) {
+                        console.error('Error fetching order items:', itemsError);
+                        continue;
+                    }
+
+                    // Restore stock for each item
+                    if (orderItems && order.batch_id) {
+                        for (const item of orderItems) {
+                            try {
+                                await supabase.rpc('restore_stock', {
+                                    p_batch_id: order.batch_id,
+                                    p_menu_id: item.menu_id,
+                                    p_quantity: item.quantity
+                                });
+                            } catch (restoreError) {
+                                console.error('Error restoring stock for item:', item.menu_id, restoreError);
+                                // Continue with other items even if one fails
+                            }
+                        }
+                    }
+                }
+            }
+
             const { error } = await supabase
                 .from('orders')
                 .update({ status: newStatus })
@@ -137,22 +211,17 @@ export const AdminOrderPage: React.FC = () => {
         setIsBulkUpdating(true);
         try {
             const ids = Array.from(selectedOrderIds);
+            console.log('Bulk delete starting for ids:', ids);
 
-            // First delete order items
-            const { error: itemsError } = await supabase
-                .from('order_items')
-                .delete()
-                .in('order_id', ids);
-
-            if (itemsError) {
-                console.error('Error deleting order items:', itemsError);
-            }
-
-            // Then delete orders
-            const { error } = await supabase
+            // Delete orders directly - payment_proofs and order_items will be
+            // automatically deleted via ON DELETE CASCADE constraint in database
+            const { data, error } = await supabase
                 .from('orders')
                 .delete()
-                .in('id', ids);
+                .in('id', ids)
+                .select();
+
+            console.log('Bulk delete result - data:', data, 'error:', error);
 
             if (error) throw error;
 
@@ -198,6 +267,69 @@ export const AdminOrderPage: React.FC = () => {
             <div className={styles.header}>
                 <div className={styles.topRow}>
                     <h1 className={styles.title}>Order Management</h1>
+
+
+                    {/* Dropdown Search - Mobile Only */}
+                    <div className={styles.searchDropdownContainer} ref={searchDropdownRef}>
+                        <button
+                            className={styles.searchIconBtn}
+                            onClick={() => {
+                                setIsSearchDropdownOpen(!isSearchDropdownOpen);
+                                if (!isSearchDropdownOpen) {
+                                    setTimeout(() => searchInputRef.current?.focus(), 150);
+                                }
+                            }}
+                            title="Search orders"
+                        >
+                            <Search size={20} />
+                        </button>
+
+                        {isSearchDropdownOpen && (
+                            <div className={styles.searchDropdown}>
+                                <div className={styles.searchContainer}>
+                                    <Search size={16} className={styles.searchIcon} />
+                                    <input
+                                        ref={searchInputRef}
+                                        type="text"
+                                        placeholder="Cari nama/no HP..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className={styles.searchInput}
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            className={styles.clearSearch}
+                                            onClick={() => setSearchQuery('')}
+                                            title="Clear search"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Desktop Search - Always Visible */}
+                    <div className={styles.desktopSearchContainer}>
+                        <Search size={16} className={styles.searchIcon} />
+                        <input
+                            type="text"
+                            placeholder="Cari nama/no HP..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className={styles.searchInput}
+                        />
+                        {searchQuery && (
+                            <button
+                                className={styles.clearSearch}
+                                onClick={() => setSearchQuery('')}
+                                title="Clear search"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
                     <div className={styles.viewToggle}>
                         <button
                             className={`${styles.toggleOption} ${viewMode === 'current_batch' ? styles.activeOption : ''}`}
