@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Menu } from '../../types';
 import { Button } from '../../components/ui/Button';
-import { X, Upload } from 'lucide-react';
+import { X, Trash2, Plus, Loader2 } from 'lucide-react';
 import styles from './MenuFormModal.module.css';
 import toast from 'react-hot-toast';
 
@@ -13,17 +13,20 @@ interface MenuFormModalProps {
     menuToEdit: Menu | null;
 }
 
+const MAX_IMAGES = 5;
+
 export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, onSuccess, menuToEdit }) => {
     const [formData, setFormData] = useState({
         name: '',
         price: '',
         description: '',
-        image_url: '',
         size: '',
     });
+    const [images, setImages] = useState<{ id?: string; url: string; isNew?: boolean }[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
     useEffect(() => {
         if (menuToEdit) {
@@ -31,13 +34,45 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                 name: menuToEdit.name,
                 price: menuToEdit.price.toString(),
                 description: menuToEdit.description || '',
-                image_url: menuToEdit.image_url || '',
                 size: menuToEdit.size || '',
             });
+            // Fetch existing images
+            fetchMenuImages(menuToEdit.id);
         } else {
-            setFormData({ name: '', price: '', description: '', image_url: '', size: '' });
+            setFormData({ name: '', price: '', description: '', size: '' });
+            setImages([]);
         }
     }, [menuToEdit]);
+
+    const fetchMenuImages = async (menuId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('menu_images')
+                .select('id, image_url, display_order')
+                .eq('menu_id', menuId)
+                .order('display_order');
+
+            if (error) {
+                // Table might not exist yet, use legacy image_url
+                if (menuToEdit?.image_url) {
+                    setImages([{ url: menuToEdit.image_url }]);
+                }
+                return;
+            }
+
+            if (data && data.length > 0) {
+                setImages(data.map(img => ({ id: img.id, url: img.image_url })));
+            } else if (menuToEdit?.image_url) {
+                // Fallback to legacy single image
+                setImages([{ url: menuToEdit.image_url }]);
+            }
+        } catch (err) {
+            console.error('Error fetching images:', err);
+            if (menuToEdit?.image_url) {
+                setImages([{ url: menuToEdit.image_url }]);
+            }
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -55,70 +90,109 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
         e.preventDefault();
         setIsDragging(false);
         const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
-        }
+        handleMultipleFiles(Array.from(files));
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            handleFileUpload(e.target.files[0]);
+            handleMultipleFiles(Array.from(e.target.files));
         }
     };
 
-    const handleFileUpload = async (file: File) => {
-        if (!file.type.startsWith('image/')) {
-            toast.error('Please upload an image file');
-            return;
+    const handleMultipleFiles = async (files: File[]) => {
+        const imageFiles = files.filter(f => f.type.startsWith('image/'));
+        const availableSlots = MAX_IMAGES - images.length;
+
+        if (imageFiles.length > availableSlots) {
+            toast.error(`Maksimal ${MAX_IMAGES} gambar. Tersisa ${availableSlots} slot.`);
+            imageFiles.splice(availableSlots);
         }
+
+        if (imageFiles.length === 0) return;
 
         setIsUploading(true);
 
-        try {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `menu-${Date.now()}.${fileExt}`;
-            const filePath = `${fileName}`;
+        for (const file of imageFiles) {
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `menu-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-            const { error: uploadError } = await supabase.storage
-                .from('menu-images')
-                .upload(filePath, file);
+                const { error: uploadError } = await supabase.storage
+                    .from('menu-images')
+                    .upload(fileName, file);
 
-            if (uploadError) throw uploadError;
+                if (uploadError) throw uploadError;
 
-            const { data: { publicUrl } } = supabase.storage
-                .from('menu-images')
-                .getPublicUrl(filePath);
+                const { data: { publicUrl } } = supabase.storage
+                    .from('menu-images')
+                    .getPublicUrl(fileName);
 
-            setFormData(prev => ({ ...prev, image_url: publicUrl }));
-            toast.success('Image uploaded!');
-        } catch (error) {
-            console.error('Upload error:', error);
-            toast.error('Failed to upload image');
-        } finally {
-            setIsUploading(false);
+                setImages(prev => [...prev, { url: publicUrl, isNew: true }]);
+            } catch (error) {
+                console.error('Upload error:', error);
+                toast.error('Gagal mengupload gambar');
+            }
         }
+
+        setIsUploading(false);
+        toast.success('Gambar berhasil diupload!');
+    };
+
+    const handleRemoveImage = (index: number) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    // Drag to reorder handlers
+    const handleDragStart = (index: number) => {
+        setDraggedIndex(index);
+    };
+
+    const handleDragEnter = (index: number) => {
+        if (draggedIndex === null || draggedIndex === index) return;
+
+        setImages(prev => {
+            const newImages = [...prev];
+            const draggedItem = newImages[draggedIndex];
+            newImages.splice(draggedIndex, 1);
+            newImages.splice(index, 0, draggedItem);
+            return newImages;
+        });
+        setDraggedIndex(index);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validate price
         const price = parseFloat(formData.price);
         if (isNaN(price) || price <= 0) {
-            toast.error('Please enter a valid price greater than 0');
+            toast.error('Masukkan harga yang valid');
+            return;
+        }
+
+        if (images.length === 0) {
+            toast.error('Tambahkan minimal 1 gambar');
             return;
         }
 
         setIsLoading(true);
 
         try {
+            // First image becomes the primary thumbnail
+            const primaryImage = images[0]?.url || null;
+
             const menuData = {
                 name: formData.name.trim(),
                 price,
                 description: formData.description.trim(),
-                image_url: formData.image_url,
+                image_url: primaryImage, // Keep for backward compatibility
                 size: formData.size.trim() || null,
             };
+
+            let menuId: string;
 
             if (menuToEdit) {
                 const { error } = await supabase
@@ -126,19 +200,43 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                     .update(menuData)
                     .eq('id', menuToEdit.id);
                 if (error) throw error;
-                toast.success('Menu updated successfully');
+                menuId = menuToEdit.id;
+
+                // Delete old images and insert new ones
+                await supabase.from('menu_images').delete().eq('menu_id', menuId);
             } else {
-                const { error } = await supabase
+                const { data, error } = await supabase
                     .from('menus')
-                    .insert(menuData);
+                    .insert(menuData)
+                    .select('id')
+                    .single();
                 if (error) throw error;
-                toast.success('Menu created successfully');
+                menuId = data.id;
             }
 
+            // Insert all images with display order
+            if (images.length > 0) {
+                const imageRecords = images.map((img, index) => ({
+                    menu_id: menuId,
+                    image_url: img.url,
+                    display_order: index,
+                }));
+
+                const { error: imgError } = await supabase
+                    .from('menu_images')
+                    .insert(imageRecords);
+
+                if (imgError) {
+                    console.warn('Failed to save images to menu_images table:', imgError);
+                    // Don't throw - menu was still created/updated
+                }
+            }
+
+            toast.success(menuToEdit ? 'Menu berhasil diperbarui' : 'Menu berhasil dibuat');
             onSuccess();
         } catch (error) {
             console.error('Save error:', error);
-            toast.error('Failed to save menu');
+            toast.error('Gagal menyimpan menu');
         } finally {
             setIsLoading(false);
         }
@@ -148,110 +246,148 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
         <div className={styles.overlay} onClick={onClose}>
             <div className={styles.modal} onClick={e => e.stopPropagation()}>
                 <div className={styles.header}>
-                    <h2 className={styles.title}>{menuToEdit ? 'Edit Menu Item' : 'Add New Menu Item'}</h2>
+                    <h2 className={styles.title}>{menuToEdit ? 'Edit Menu' : 'Tambah Menu Baru'}</h2>
                     <button onClick={onClose} className={styles.closeBtn}>
                         <X size={24} />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
+                    {/* Multi-Image Gallery */}
                     <div className={styles.formGroup}>
-                        <label>Menu Image</label>
-                        <div
-                            className={`${styles.imageUpload} ${isDragging ? styles.dragging : ''}`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                        >
-                            {formData.image_url ? (
-                                <>
-                                    <img src={formData.image_url} alt="Preview" className={styles.preview} />
-                                    <label className={styles.uploadBtn}>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageChange}
-                                            hidden
-                                            disabled={isUploading}
-                                        />
-                                        Replace Image
-                                    </label>
-                                </>
-                            ) : (
-                                <label className={styles.uploadLabel}>
+                        <label>Gambar Menu ({images.length}/{MAX_IMAGES})</label>
+                        <p className={styles.imageHint}>Gambar pertama akan menjadi thumbnail utama. Drag untuk mengubah urutan.</p>
+
+                        {/* Image Grid */}
+                        <div className={styles.imageGrid}>
+                            {images.map((img, index) => (
+                                <div
+                                    key={img.id || img.url}
+                                    className={`${styles.imageItem} ${index === 0 ? styles.primaryImage : ''} ${draggedIndex === index ? styles.dragging : ''}`}
+                                    draggable
+                                    onDragStart={() => handleDragStart(index)}
+                                    onDragEnter={() => handleDragEnter(index)}
+                                    onDragEnd={handleDragEnd}
+                                    onDragOver={(e) => e.preventDefault()}
+                                >
+                                    <img src={img.url} alt={`Image ${index + 1}`} className={styles.thumbnail} />
+                                    <div className={styles.imageOverlay}>
+                                        <select
+                                            className={styles.positionSelect}
+                                            value={index}
+                                            onChange={(e) => {
+                                                const newPos = parseInt(e.target.value);
+                                                if (newPos !== index) {
+                                                    setImages(prev => {
+                                                        const newImages = [...prev];
+                                                        const item = newImages.splice(index, 1)[0];
+                                                        newImages.splice(newPos, 0, item);
+                                                        return newImages;
+                                                    });
+                                                }
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {images.map((_, i) => (
+                                                <option key={i} value={i}>{i + 1}</option>
+                                            ))}
+                                        </select>
+                                        <button
+                                            type="button"
+                                            className={styles.removeBtn}
+                                            onClick={() => handleRemoveImage(index)}
+                                            title="Hapus gambar"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                    {index === 0 && <span className={styles.primaryBadge}>Utama</span>}
+                                </div>
+                            ))}
+
+                            {/* Add Image Button */}
+                            {images.length < MAX_IMAGES && (
+                                <label
+                                    className={`${styles.addImageBtn} ${isDragging ? styles.dragging : ''}`}
+                                    onDragOver={handleDragOver}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={handleDrop}
+                                >
                                     <input
                                         type="file"
                                         accept="image/*"
+                                        multiple
                                         onChange={handleImageChange}
                                         hidden
                                         disabled={isUploading}
                                     />
-                                    <div className={styles.uploadIconWrapper}>
-                                        <Upload size={24} />
-                                    </div>
-                                    <span className={styles.uploadText}>
-                                        {isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}
-                                    </span>
-                                    <span className={styles.uploadSubtext}>SVG, PNG, JPG or GIF (max. 5MB)</span>
+                                    {isUploading ? (
+                                        <Loader2 size={24} className={styles.spinner} />
+                                    ) : (
+                                        <>
+                                            <Plus size={24} />
+                                            <span>Tambah</span>
+                                        </>
+                                    )}
                                 </label>
                             )}
                         </div>
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label htmlFor="name">Name</label>
+                        <label htmlFor="name">Nama Menu</label>
                         <input
                             type="text"
                             id="name"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             required
-                            placeholder="e.g. Mango Tango"
+                            placeholder="contoh: Mango Tango"
                             className={styles.input}
                         />
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label htmlFor="price">Price (IDR)</label>
+                        <label htmlFor="price">Harga (Rp)</label>
                         <input
                             type="number"
                             id="price"
                             value={formData.price}
                             onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                             required
-                            placeholder="e.g. 15000"
+                            placeholder="contoh: 15000"
                             className={styles.input}
                         />
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label htmlFor="size">Size (Optional)</label>
+                        <label htmlFor="size">Ukuran (Opsional)</label>
                         <input
                             type="text"
                             id="size"
                             value={formData.size}
                             onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                            placeholder="e.g. 350ml, 500ml"
+                            placeholder="contoh: 350ml"
                             className={styles.input}
                         />
                     </div>
 
                     <div className={styles.formGroup}>
-                        <label htmlFor="description">Description</label>
+                        <label htmlFor="description">Deskripsi</label>
                         <textarea
                             id="description"
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Describe your juice (ingredients, taste, benefits)..."
+                            placeholder="Jelaskan bahan, rasa, atau manfaat..."
                             className={styles.textarea}
                         />
                     </div>
                 </form>
 
                 <div className={styles.footer}>
-                    <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button type="button" variant="outline" onClick={onClose}>Batal</Button>
                     <Button type="submit" isLoading={isLoading} disabled={isUploading} onClick={handleSubmit}>
-                        {menuToEdit ? 'Save Changes' : 'Create Menu Item'}
+                        {menuToEdit ? 'Simpan Perubahan' : 'Tambah Menu'}
                     </Button>
                 </div>
             </div>

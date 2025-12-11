@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Order } from '../../types';
-import { ClipboardList, Archive, Clock, CheckSquare, Square, Check, Trash2, Search, X } from 'lucide-react';
+import { ClipboardList, Archive, Clock, CheckSquare, Square, Check, Trash2, Search, X, Timer } from 'lucide-react';
 import styles from './AdminOrderPage.module.css';
 import toast from 'react-hot-toast';
 import { OrderDetailModal } from './OrderDetailModal';
 
 type ViewMode = 'current_batch' | 'all_history';
+
+// Payment timeout in minutes (must match PaymentPage)
+const PAYMENT_TIMEOUT_MINUTES = 15;
 
 export const AdminOrderPage: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
@@ -258,6 +261,25 @@ export const AdminOrderPage: React.FC = () => {
         { id: 'cancelled', label: 'Cancelled', colorClass: styles.status_cancelled },
     ];
 
+    // Calculate remaining payment time for pending orders (skip COD as it doesn't need timer)
+    const getRemainingPaymentTime = (order: Order): { minutes: number; expired: boolean } | null => {
+        // Don't show timer for COD orders or non-pending orders
+        if (order.status !== 'pending_payment' || !order.payment_started_at || order.payment_method === 'cod') {
+            return null;
+        }
+
+        const startTime = new Date(order.payment_started_at).getTime();
+        const expiryTime = startTime + PAYMENT_TIMEOUT_MINUTES * 60 * 1000;
+        const now = Date.now();
+        const remaining = expiryTime - now;
+
+        if (remaining <= 0) {
+            return { minutes: 0, expired: true };
+        }
+
+        return { minutes: Math.ceil(remaining / 60000), expired: false };
+    };
+
     if (isLoading) return <div className={styles.loading}>Loading orders...</div>;
 
     const allSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
@@ -348,6 +370,29 @@ export const AdminOrderPage: React.FC = () => {
                     </div>
                 </div>
 
+                {/* All Orders + Select All Row - Above Status Tabs */}
+                <div className={styles.toolbarRow}>
+                    <button
+                        className={`${styles.allOrdersBtn} ${filter === 'all' ? styles.activeAllBtn : ''}`}
+                        onClick={() => setFilter('all')}
+                    >
+                        <ClipboardList size={16} />
+                        <span>All Orders</span>
+                    </button>
+
+                    {filter !== 'all' && (
+                        <button
+                            className={`${styles.selectAllBtn} ${allSelected ? styles.activeSelectAll : ''}`}
+                            onClick={handleSelectAll}
+                            title={allSelected ? "Deselect All" : "Select All Visible"}
+                        >
+                            {allSelected ? <CheckSquare size={18} /> : <Square size={18} />}
+                            <span>{allSelected ? 'All Selected' : 'Select All'}</span>
+                        </button>
+                    )}
+                </div>
+
+                {/* Status Filter Tabs */}
                 <div className={styles.filterContainer}>
                     {filterTabs.map((tab) => (
                         <button
@@ -360,64 +405,37 @@ export const AdminOrderPage: React.FC = () => {
                     ))}
                 </div>
 
-                <div className={styles.toolbar}>
-                    <div className={styles.toolbarRow}>
-                        <div className={styles.leftToolbar}>
-                            {filter !== 'all' && (
-                                <button
-                                    className={`${styles.selectAllBtn} ${allSelected ? styles.activeSelectAll : ''}`}
-                                    onClick={handleSelectAll}
-                                    title={allSelected ? "Deselect All" : "Select All Visible"}
-                                >
-                                    {allSelected ? <CheckSquare size={18} /> : <Square size={18} />}
-                                    <span>{allSelected ? 'All Selected' : 'Select All'}</span>
-                                </button>
-                            )}
-                        </div>
-
-                        <div className={styles.rightToolbar}>
-                            <button
-                                className={`${styles.allOrdersBtn} ${filter === 'all' ? styles.activeAllBtn : ''}`}
-                                onClick={() => setFilter('all')}
-                            >
-                                <ClipboardList size={16} />
-                                <span>All Orders</span>
+                {/* Bulk Action Row - Only shows when items selected */}
+                {selectedOrderIds.size > 0 && filter !== 'all' && (
+                    <div className={styles.bulkActionRow}>
+                        {filter === 'pending_payment' && (
+                            <button onClick={() => handleBulkUpdate('cancelled')} className={`${styles.bulkActionBtn} ${styles.deleteBtn}`} disabled={isBulkUpdating}>
+                                Batalkan Pesanan
                             </button>
-                        </div>
+                        )}
+                        {filter === 'payment_received' && (
+                            <button onClick={() => handleBulkUpdate('preparing')} className={styles.bulkActionBtn} disabled={isBulkUpdating}>
+                                Tandai Preparing
+                            </button>
+                        )}
+                        {filter === 'preparing' && (
+                            <button onClick={() => handleBulkUpdate('ready')} className={styles.bulkActionBtn} disabled={isBulkUpdating}>
+                                Tandai Ready
+                            </button>
+                        )}
+                        {filter === 'ready' && (
+                            <button onClick={() => handleBulkUpdate('picked_up')} className={styles.bulkActionBtn} disabled={isBulkUpdating}>
+                                Tandai Selesai
+                            </button>
+                        )}
+                        {filter === 'cancelled' && (
+                            <button onClick={handleBulkDelete} className={`${styles.bulkActionBtn} ${styles.deleteBtn}`} disabled={isBulkUpdating}>
+                                <Trash2 size={16} />
+                                Hapus Pesanan
+                            </button>
+                        )}
                     </div>
-
-                    {/* Bulk Action Row - Below All Orders */}
-                    {selectedOrderIds.size > 0 && filter !== 'all' && (
-                        <div className={styles.bulkActionRow}>
-                            {filter === 'pending_payment' && (
-                                <button onClick={() => handleBulkUpdate('cancelled')} className={`${styles.bulkActionBtn} ${styles.deleteBtn}`} disabled={isBulkUpdating}>
-                                    Batalkan Pesanan
-                                </button>
-                            )}
-                            {filter === 'payment_received' && (
-                                <button onClick={() => handleBulkUpdate('preparing')} className={styles.bulkActionBtn} disabled={isBulkUpdating}>
-                                    Tandai Preparing
-                                </button>
-                            )}
-                            {filter === 'preparing' && (
-                                <button onClick={() => handleBulkUpdate('ready')} className={styles.bulkActionBtn} disabled={isBulkUpdating}>
-                                    Tandai Ready
-                                </button>
-                            )}
-                            {filter === 'ready' && (
-                                <button onClick={() => handleBulkUpdate('picked_up')} className={styles.bulkActionBtn} disabled={isBulkUpdating}>
-                                    Tandai Selesai
-                                </button>
-                            )}
-                            {filter === 'cancelled' && (
-                                <button onClick={handleBulkDelete} className={`${styles.bulkActionBtn} ${styles.deleteBtn}`} disabled={isBulkUpdating}>
-                                    <Trash2 size={16} />
-                                    Hapus Pesanan
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
 
             <div className={styles.list}>
@@ -436,10 +454,12 @@ export const AdminOrderPage: React.FC = () => {
                 ) : (
                     orders.map((order) => {
                         const isSelected = selectedOrderIds.has(order.id);
+                        const remainingTime = getRemainingPaymentTime(order);
+
                         return (
                             <div
                                 key={order.id}
-                                className={`${styles.orderCard} ${getStatusStyle(order.status)} ${isSelected ? styles.selectedCard : ''}`}
+                                className={`${styles.orderCard} ${getStatusStyle(order.status)} ${isSelected ? styles.selectedCard : ''} ${filter !== 'all' ? styles.selectable : ''}`}
                                 onClick={() => handleViewDetails(order)}
                             >
                                 {filter !== 'all' && (
@@ -454,32 +474,50 @@ export const AdminOrderPage: React.FC = () => {
                                 )}
 
                                 <div className={styles.cardContent}>
-                                    <div className={styles.orderInfo}>
-                                        <div className={styles.orderHeader}>
-                                            <h3 className={styles.orderId}>#{order.id.slice(0, 8)}</h3>
-                                            <span className={`${styles.statusBadge} ${getStatusStyle(order.status)}`}>
-                                                {order.status.replace('_', ' ')}
-                                            </span>
-                                            {order.payment_method && order.payment_method !== 'pending' && (
-                                                <span className={styles.paymentMethodBadge}>
-                                                    {order.payment_method === 'cod' ? 'COD' : order.payment_method.toUpperCase()}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className={styles.customerInfo}>
-                                            <span className={styles.customerName}>{order.customer_name}</span>
-                                            <span className={styles.dot}></span>
-                                            <span>{order.customer_phone}</span>
-                                        </div>
-                                        <p className={styles.date}>{new Date(order.created_at).toLocaleString()}</p>
-                                    </div>
-
-                                    <div className={styles.cardRight}>
+                                    {/* Top Row: Name + Price */}
+                                    <div className={styles.cardTopRow}>
+                                        <h3 className={styles.buyerName}>{order.customer_name}</h3>
                                         <span className={styles.price}>
                                             {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(order.total_amount)}
                                         </span>
-                                        <span className={styles.viewBtn}>Tap to view details</span>
                                     </div>
+
+                                    {/* Phone */}
+                                    <p className={styles.customerPhone}>{order.customer_phone}</p>
+
+                                    {/* Badges Row */}
+                                    <div className={styles.badgesRow}>
+                                        <span className={`${styles.statusBadge} ${getStatusStyle(order.status)}`}>
+                                            {order.status.replace('_', ' ')}
+                                        </span>
+                                        {order.payment_method && order.payment_method !== 'pending' && (
+                                            <span className={styles.paymentMethodBadge}>
+                                                {order.payment_method === 'cod' ? 'COD' : order.payment_method.toUpperCase()}
+                                            </span>
+                                        )}
+                                        {remainingTime && !remainingTime.expired ? (
+                                            <span className={`${styles.timerBadge} ${remainingTime.minutes <= 2 ? styles.timerCritical : remainingTime.minutes <= 5 ? styles.timerWarning : ''}`}>
+                                                <Timer size={12} />
+                                                {remainingTime.minutes} mnt
+                                            </span>
+                                        ) : remainingTime?.expired ? (
+                                            <span className={`${styles.timerBadge} ${styles.timerExpired}`}>
+                                                <Timer size={12} />
+                                                Expired
+                                            </span>
+                                        ) : null}
+                                    </div>
+
+                                    {/* Checkout Time */}
+                                    <p className={styles.checkoutTime}>
+                                        <Clock size={12} />
+                                        Checkout: {new Date(order.created_at).toLocaleString('id-ID', {
+                                            day: 'numeric',
+                                            month: 'short',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        })}
+                                    </p>
                                 </div>
                             </div>
                         );

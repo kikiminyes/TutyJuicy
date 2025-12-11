@@ -555,7 +555,7 @@ export const PaymentPage: React.FC = () => {
                     <PaymentTimer
                         expiresAt={timerExpiresAt}
                         onExpire={handleTimerExpire}
-                        isPaused={uploadSuccess}
+                        isPaused={uploadSuccess || selectedPaymentMethod === 'cod'}
                         isExpired={isTimerExpired}
                     />
                 ) : (
@@ -564,9 +564,9 @@ export const PaymentPage: React.FC = () => {
             </header>
             <main className={styles.main}>
                 <div className={styles.orderInfo}>
-                    <div className={styles.orderHeaderRow}>
-                        <span className={styles.orderLabel}>Order ID</span>
-                        <span className={styles.orderId}>#{order.id.slice(0, 8)}</span>
+                    <div className={styles.customerInfo}>
+                        <span className={styles.customerName}>{order.customer_name}</span>
+                        <span className={styles.customerPhone}>{order.customer_phone}</span>
                     </div>
 
                     <div className={styles.itemsList}>
@@ -608,24 +608,6 @@ export const PaymentPage: React.FC = () => {
                                     onSelectMethod={handlePaymentMethodSelect}
                                     isLoading={isLoading}
                                 />
-                                {/* Contact Admin Info Card */}
-                                <div className={styles.contactInfoCard}>
-                                    <div className={styles.contactInfoContent}>
-                                        <MessageCircle size={20} className={styles.contactInfoIcon} />
-                                        <div className={styles.contactInfoText}>
-                                            <h3>Butuh Bantuan?</h3>
-                                            <p>Hubungi Bu Tuty untuk pertanyaan seputar pembayaran</p>
-                                        </div>
-                                    </div>
-                                    <button
-                                        className={styles.contactInfoBtn}
-                                        onClick={handleContactAdmin}
-                                        disabled={!activeAdminPhone}
-                                    >
-                                        <MessageCircle size={16} />
-                                        <span>Hubungi Bu Tuty</span>
-                                    </button>
-                                </div>
                             </>
                         )}
                         {/* Payment Proof Uploader */}
@@ -646,7 +628,7 @@ export const PaymentPage: React.FC = () => {
                                 <div className={styles.successCard}>
                                     <CheckCircle size={48} />
                                     <h2>Cash on Delivery</h2>
-                                    <p>Siapkan uang pas saat mengambil pesanan.</p>
+                                    <p>Untuk pembayaran COD, mohon konfirmasi langsung ke Bu Tuty via WhatsApp agar pesanan segera diproses.</p>
                                     <p className={styles.successHint}>Anda akan menerima notifikasi WhatsApp ketika pesanan siap.</p>
                                     {/* Only show change button if payment is still pending */}
                                     {isPending && (
@@ -676,10 +658,30 @@ export const PaymentPage: React.FC = () => {
                                 </div>
                             </section>
                         )}
+
                         {/* Timeline History */}
                         {!isPending && (
                             <OrderStatusTimeline order={order} />
                         )}
+
+                        {/* Contact Admin Info Card - Visible for both Pending and Verified states */}
+                        <div className={styles.contactInfoCard}>
+                            <div className={styles.contactInfoContent}>
+                                <MessageCircle size={20} className={styles.contactInfoIcon} />
+                                <div className={styles.contactInfoText}>
+                                    <h3>Butuh Bantuan?</h3>
+                                    <p>Hubungi Bu Tuty untuk pertanyaan seputar pembayaran</p>
+                                </div>
+                            </div>
+                            <button
+                                className={styles.contactInfoBtn}
+                                onClick={handleContactAdmin}
+                                disabled={!activeAdminPhone}
+                            >
+                                <MessageCircle size={16} />
+                                <span>Hubungi Bu Tuty</span>
+                            </button>
+                        </div>
                         {/* Cancel Button */}
                         {canCancel() && (
                             <button className={styles.cancelBtn} onClick={() => setShowCancelDialog(true)}>

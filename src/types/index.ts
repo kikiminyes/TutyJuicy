@@ -9,6 +9,13 @@ export interface Menu {
     updated_at: string;
 }
 
+export interface MenuImage {
+    id: string;
+    menu_id: string;
+    image_url: string;
+    display_order: number;
+}
+
 export interface Batch {
     id: string;
     title: string;

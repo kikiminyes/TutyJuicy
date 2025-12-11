@@ -55,19 +55,26 @@
     /* Emoji keeps color */
 }
 
-/* Brand text - hidden when at top */
+/* Brand text - always visible with shimmer */
 .brandText {
-    opacity: 0;
-    max-width: 0;
-    overflow: hidden;
-    white-space: nowrap;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 25%, #FF9100 50%, #06b6d4 75%, #0891b2 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: brandShimmer 4s ease-in-out infinite;
 }
 
-/* Brand text - visible when scrolled */
-.brandTextVisible {
-    opacity: 1;
-    max-width: 150px;
+@keyframes brandShimmer {
+
+    0%,
+    100% {
+        background-position: 0% center;
+    }
+
+    50% {
+        background-position: 100% center;
+    }
 }
 
 /* ===== ACTIONS ===== */
@@ -82,24 +89,22 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
-    color: var(--color-text);
+    padding: 0.5rem 1.25rem;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    border: none;
+    border-radius: 100px;
+    color: white;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-fast);
     min-height: 40px;
-    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.25);
 }
 
 .checkOrderBtn:hover {
-    background: var(--color-surface);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    box-shadow: var(--shadow-sm);
+    opacity: 0.95;
+    animation: none;
 }
 
 .checkOrderBtn:active {
@@ -109,6 +114,93 @@
 .checkOrderBtn svg {
     flex-shrink: 0;
     stroke-width: 2.5px;
+}
+
+/* Dynamic Glossy & Shimmer Effect */
+@keyframes shimmer {
+    0% {
+        transform: translateX(-150%) skewX(-15deg);
+    }
+
+    50% {
+        transform: translateX(150%) skewX(-15deg);
+    }
+
+    100% {
+        transform: translateX(150%) skewX(-15deg);
+    }
+}
+
+@keyframes btnPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(8, 145, 178, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 12px rgba(8, 145, 178, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(8, 145, 178, 0);
+    }
+}
+
+.checkOrderBtn {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    /* Cyan-500 to Cyan-600 */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 4px 15px rgba(8, 145, 178, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    animation: btnPulse 3s infinite ease-out;
+    z-index: 1;
+}
+
+/* Glassy Top Reflection */
+.checkOrderBtn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Shimmer Light Sweep */
+.checkOrderBtn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transform: translateX(-150%) skewX(-15deg);
+    animation: shimmer 4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    animation-delay: 2s;
+    /* Sync with pulse */
+    pointer-events: none;
+}
+
+/* Hover State - 3D Lift */
+.checkOrderBtn:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+        0 8px 25px rgba(8, 145, 178, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);
+    /* Brighter cyan on hover */
+    opacity: 1;
+    animation: none;
+    /* Pause pulse on hover to focus */
+}
+
+/* Active State - Click */
+.checkOrderBtn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 4px 10px rgba(8, 145, 178, 0.3);
 }
 
 .buttonText {

@@ -26,9 +26,7 @@ export const CustomerHeader: React.FC = () => {
             <header className={`${styles.header} ${isScrolled ? styles.headerScrolled : styles.headerTop}`}>
                 <Link to="/" className={styles.logo}>
                     <span className={styles.logoIcon}>🍊</span>
-                    <span className={`${styles.brandText} ${isScrolled ? styles.brandTextVisible : ''}`}>
-                        TutyJuicy
-                    </span>
+                    <span className={styles.brandText}>TutyJuicy</span>
                 </Link>
 
                 <div className={styles.actions}>

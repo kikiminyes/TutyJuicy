@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-// Force hmr update
 import { supabase } from '../../lib/supabase';
 import type { Menu } from '../../types';
 import { Card } from '../ui/Card';
+import { ImageCarousel } from '../ui/ImageCarousel';
 import { Plus, Minus } from 'lucide-react';
 import styles from './MenuGrid.module.css';
 import { useCart } from '../../context/CartContext';
@@ -14,6 +14,7 @@ interface MenuGridProps {
 
 interface MenuItemWithStock extends Menu {
     quantity_available: number;
+    images?: string[];
 }
 
 export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
@@ -38,12 +39,33 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
 
             if (stockError) throw stockError;
 
-            // 3. Merge data - use quantity_available directly
+            // 3. Fetch all menu images
+            let menuImages: { menu_id: string; image_url: string; display_order: number }[] = [];
+            try {
+                const { data: imgData } = await supabase
+                    .from('menu_images')
+                    .select('menu_id, image_url, display_order')
+                    .order('display_order');
+                if (imgData) menuImages = imgData;
+            } catch {
+                // Table might not exist yet, ignore
+            }
+
+            // 4. Merge data
             const mergedData = menus.map((menu) => {
                 const stock = stocks?.find((s) => s.menu_id === menu.id);
+                const images = menuImages
+                    .filter(img => img.menu_id === menu.id)
+                    .sort((a, b) => a.display_order - b.display_order)
+                    .map(img => img.image_url);
+
+                // Use images array, fallback to single image_url
+                const finalImages = images.length > 0 ? images : (menu.image_url ? [menu.image_url] : []);
+
                 return {
                     ...menu,
                     quantity_available: stock ? Math.max(0, stock.quantity_available) : 0,
+                    images: finalImages,
                 };
             });
 
@@ -78,8 +100,6 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
 
     return (
         <div>
-            {/* LIVE HEADER removed as per CSS */}
-
             <div className={styles.grid}>
                 {menuItems.map((item) => {
                     const isSoldOut = item.quantity_available <= 0;
@@ -89,8 +109,12 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
                             className={`${styles.menuCard} ${isSoldOut ? styles.menuCardSoldOut : ''}`}
                         >
                             <div className={styles.imageContainer}>
-                                {item.image_url ? (
-                                    <img src={item.image_url} alt={item.name} className={styles.image} />
+                                {item.images && item.images.length > 0 ? (
+                                    <ImageCarousel
+                                        images={item.images}
+                                        alt={item.name}
+                                        className={styles.carousel}
+                                    />
                                 ) : (
                                     <div className={styles.placeholderImage}>🥤</div>
                                 )}

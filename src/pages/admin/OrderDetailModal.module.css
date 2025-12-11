@@ -306,8 +306,8 @@
     position: absolute;
     top: 12px;
     height: 2px;
-    width: calc(100% - 24px);
-    left: calc(50% + 12px);
+    width: 100%;
+    left: 50%;
     background: #e5e7eb;
     transition: background-color 0.3s ease;
 }

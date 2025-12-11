@@ -266,15 +266,15 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                                                 >
                                                     {step.label}
                                                 </span>
+                                                {index < WORKFLOW_STEPS.length - 1 && (
+                                                    <div
+                                                        className={styles.workflowLine}
+                                                        style={{
+                                                            backgroundColor: stepNumber < currentStep ? WORKFLOW_STEPS[index + 1].color : '#e5e7eb'
+                                                        }}
+                                                    />
+                                                )}
                                             </div>
-                                            {index < WORKFLOW_STEPS.length - 1 && (
-                                                <div
-                                                    className={styles.workflowLine}
-                                                    style={{
-                                                        backgroundColor: stepNumber < currentStep ? WORKFLOW_STEPS[index + 1].color : '#e5e7eb'
-                                                    }}
-                                                />
-                                            )}
                                         </React.Fragment>
                                     );
                                 })}
@@ -350,6 +350,18 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                             <div className={styles.infoRow}>
                                 <span className={styles.infoLabel}>Alamat/Catatan</span>
                                 <span className={styles.infoValue}>{order.customer_address || '-'}</span>
+                            </div>
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>Checkout</span>
+                                <span className={styles.infoValue}>
+                                    {new Date(order.created_at).toLocaleString('id-ID', {
+                                        day: 'numeric',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    })}
+                                </span>
                             </div>
                         </div>
                     </div>
