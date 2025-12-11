@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import styles from './OrderDetailModal.module.css';
 import toast from 'react-hot-toast';
-import { generateStatusUpdateMessage, openWhatsApp } from '../../lib/whatsapp';
+import { generatePaymentVerifiedMessage, openWhatsApp } from '../../lib/whatsapp';
 
 // 5-step workflow colors - consistent with customer view
 const WORKFLOW_STEPS = [
@@ -37,7 +37,6 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
     const [isUpdating, setIsUpdating] = useState(false);
     const [pendingStatus, setPendingStatus] = useState<Order['status'] | null>(null);
     const [showWhatsAppConfirm, setShowWhatsAppConfirm] = useState(false);
-    const [lastUpdatedStatus, setLastUpdatedStatus] = useState<Order['status'] | null>(null);
 
     // Delete state
     const [isDeleting, setIsDeleting] = useState(false);
@@ -124,11 +123,15 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
             if (error) throw error;
 
             toast.success(`Order updated to ${pendingStatus}`);
-            setLastUpdatedStatus(pendingStatus);
             setPendingStatus(null);
 
-            // Show WhatsApp confirmation dialog
-            setShowWhatsAppConfirm(true);
+            // Only show WhatsApp dialog for payment verification
+            if (pendingStatus === 'payment_received') {
+                setShowWhatsAppConfirm(true);
+            } else {
+                onUpdate();
+                onClose();
+            }
         } catch (error) {
             console.error('Update error:', error);
             toast.error('Failed to update status');
@@ -139,19 +142,29 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
     };
 
     const handleWhatsAppConfirm = () => {
-        if (lastUpdatedStatus) {
-            const message = generateStatusUpdateMessage(order, lastUpdatedStatus);
-            openWhatsApp(order.customer_phone, message);
-        }
+
+        // Map items for message
+        const messageItems = items.map(item => ({
+            name: item.menu?.name || 'Item',
+            quantity: item.quantity
+        }));
+
+        // Generate payment verified message
+        const message = generatePaymentVerifiedMessage(
+            order.customer_name,
+            order.id,
+            order.total_amount,
+            messageItems
+        );
+        openWhatsApp(order.customer_phone, message);
+
         setShowWhatsAppConfirm(false);
-        setLastUpdatedStatus(null);
         onUpdate();
         onClose();
     };
 
     const handleWhatsAppCancel = () => {
         setShowWhatsAppConfirm(false);
-        setLastUpdatedStatus(null);
         onUpdate();
         onClose();
     };
@@ -223,7 +236,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
     const currentStep = getCurrentStep(order.status);
 
     const handleNotify = () => {
-        const message = generateStatusUpdateMessage(order, order.status);
+        // Simple greeting for general chat
+        const message = `Halo Kak ${order.customer_name}, ada yang bisa kami bantu mengenai pesanan #${order.id.slice(0, 8)}?`;
         openWhatsApp(order.customer_phone, message);
     };
 
@@ -486,17 +500,35 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                 onCancel={() => setPendingStatus(null)}
             />
 
-            {/* WhatsApp Notification Confirmation Dialog */}
-            <ConfirmDialog
-                isOpen={showWhatsAppConfirm}
-                title="Notify Customer"
-                message="Would you like to notify the customer about this status update via WhatsApp?"
-                variant="default"
-                confirmText="Send WhatsApp"
-                cancelText="Skip"
-                onConfirm={handleWhatsAppConfirm}
-                onCancel={handleWhatsAppCancel}
-            />
+            {/* WhatsApp Notification - Custom Attractive Dialog */}
+            {showWhatsAppConfirm && (
+                <div className={styles.waOverlay}>
+                    <div className={styles.waDialog}>
+                        <div className={styles.waIcon}>
+                            <MessageCircle size={32} />
+                        </div>
+                        <h2 className={styles.waTitle}>Kirim Notifikasi WhatsApp? 📱</h2>
+                        <p className={styles.waMessage}>
+                            Pembayaran sudah terverifikasi! Kirim pesan konfirmasi ke <strong>Kak {order.customer_name}</strong>?
+                        </p>
+                        <div className={styles.waActions}>
+                            <button
+                                className={styles.waSkipBtn}
+                                onClick={handleWhatsAppCancel}
+                            >
+                                Lewati
+                            </button>
+                            <button
+                                className={styles.waSendBtn}
+                                onClick={handleWhatsAppConfirm}
+                            >
+                                <MessageCircle size={18} />
+                                Kirim WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Dialog */}
             <ConfirmDialog

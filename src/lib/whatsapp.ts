@@ -32,6 +32,37 @@ export const generateStatusUpdateMessage = (order: Order, status: string) => {
     return message;
 };
 
+export const generatePaymentVerifiedMessage = (
+    customerName: string,
+    orderId: string,
+    totalAmount: number,
+    items: { name: string; quantity: number }[]
+) => {
+    const baseUrl = window.location.origin;
+    const trackingUrl = `${baseUrl}/payment/${orderId}`;
+    const formattedTotal = formatCurrency(totalAmount);
+
+    const itemsList = items.map(item => `- ${item.quantity}x ${item.name}`).join('\n');
+
+    return `*Tuty Juicy*
+
+*PEMBAYARAN TERVERIFIKASI*
+
+Halo Kak ${customerName},
+Terima kasih! Pesanan PO kakak sudah kami terima dan siap kami proses.
+
+=================
+*Rincian:*
+${itemsList}
+*Total : ${formattedTotal}*
+=================
+
+Pantau status pesanan di sini:
+${trackingUrl}
+
+Ditunggu ya, terima kasih banyak!`;
+};
+
 export const openWhatsApp = (phone: string, message: string) => {
     // Remove non-digits and ensure ID country code if missing (simple heuristic)
     let cleanPhone = phone.replace(/\D/g, '');

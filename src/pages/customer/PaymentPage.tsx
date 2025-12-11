@@ -7,7 +7,7 @@ import { PaymentTimer } from '../../components/ui/PaymentTimer';
 import { PaymentProgressTracker, PaymentMethodSelector, PaymentProofUploader, OrderStatusTimeline } from '../../components/features/payment';
 import {
     ArrowLeft, CheckCircle, XCircle,
-    MessageCircle, X, Loader2, Clock
+    MessageCircle, X, Loader2, Clock, Trophy, Package
 } from 'lucide-react';
 import styles from './PaymentPage.module.css';
 import toast from 'react-hot-toast';
@@ -178,6 +178,7 @@ export const PaymentPage: React.FC = () => {
     const isPending = order?.status === 'pending_payment';
     const isCancelled = order?.status === 'cancelled';
     const isCompleted = order?.status === 'picked_up';
+    const isReady = order?.status === 'ready';
 
     // Calculate current step for progress tracker
     const getCurrentStep = (): number => {
@@ -655,6 +656,29 @@ export const PaymentPage: React.FC = () => {
                                             Ganti Metode Pembayaran
                                         </button>
                                     )}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Ready to Pickup Card */}
+                        {isReady && (
+                            <section className={styles.section}>
+                                <div className={styles.readyCard}>
+                                    <Package size={56} />
+                                    <h2>Pesanan Siap Diambil!</h2>
+                                    <p>Pesanan Anda sudah siap. Silakan ambil di lokasi yang telah ditentukan.</p>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Order Completed Card */}
+                        {isCompleted && (
+                            <section className={styles.section}>
+                                <div className={styles.completedCard}>
+                                    <Trophy size={56} />
+                                    <h2>Terima Kasih!</h2>
+                                    <p>Pesanan Anda telah selesai. Semoga Anda menikmati jus segar kami!</p>
+                                    <p className={styles.completedHint}>Sampai jumpa di pesanan berikutnya 💚</p>
                                 </div>
                             </section>
                         )}
