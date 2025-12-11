@@ -326,6 +326,55 @@
     color: var(--color-primary);
 }
 
+/* ===== TIMER BADGE ===== */
+.timerBadge {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.08));
+    color: #059669;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.timerBadge svg {
+    flex-shrink: 0;
+}
+
+.timerWarning {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.08));
+    color: #d97706;
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.timerCritical {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+    color: #dc2626;
+    border-color: rgba(239, 68, 68, 0.4);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.timerExpired {
+    background: linear-gradient(135deg, rgba(107, 114, 128, 0.15), rgba(107, 114, 128, 0.08));
+    color: #6b7280;
+    border-color: rgba(107, 114, 128, 0.3);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+    }
+}
+
 /* ===== EMPTY STATE ===== */
 .emptyState {
     display: flex;

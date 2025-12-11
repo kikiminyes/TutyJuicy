@@ -111,6 +111,9 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                         }
                     }
                 }
+
+                // Delete payment proof if exists
+                await supabase.rpc('delete_payment_proof', { p_order_id: order.id });
             }
 
             const { error } = await supabase

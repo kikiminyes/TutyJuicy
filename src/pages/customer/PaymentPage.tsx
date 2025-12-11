@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import type { Order, PaymentSettings } from '../../types';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
+import { PaymentTimer } from '../../components/ui/PaymentTimer';
 import { PaymentProgressTracker, PaymentMethodSelector, PaymentProofUploader, OrderStatusTimeline } from '../../components/features/payment';
 import {
     ArrowLeft, CheckCircle, XCircle,
@@ -11,6 +12,9 @@ import {
 import styles from './PaymentPage.module.css';
 import toast from 'react-hot-toast';
 import { openWhatsApp } from '../../lib/whatsapp';
+
+// Payment timeout in minutes
+const PAYMENT_TIMEOUT_MINUTES = 15;
 
 interface OrderItem {
     quantity: number;
@@ -35,9 +39,14 @@ export const PaymentPage: React.FC = () => {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'qris' | 'transfer' | 'cod' | null>(null);
     const [showCancelDialog, setShowCancelDialog] = useState(false);
     const [showBackDialog, setShowBackDialog] = useState(false);
+    const [showChangeMethodDialog, setShowChangeMethodDialog] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
 
     const [activeAdminPhone, setActiveAdminPhone] = useState<string | null>(null);
+
+    // Timer state
+    const [timerExpiresAt, setTimerExpiresAt] = useState<Date | null>(null);
+    const [isTimerExpired, setIsTimerExpired] = useState(false);
 
     useEffect(() => {
         const fetchOrderAndSettings = async () => {
@@ -100,6 +109,37 @@ export const PaymentPage: React.FC = () => {
 
                 if (proofData) {
                     setUploadSuccess(true);
+                }
+
+                // 6. Initialize Payment Timer
+                // Only for pending_payment orders
+                if (orderData.status === 'pending_payment') {
+                    let paymentStartedAt = orderData.payment_started_at;
+
+                    // If payment_started_at is not set, set it now
+                    if (!paymentStartedAt) {
+                        const now = new Date().toISOString();
+                        const { error: updateError } = await supabase
+                            .from('orders')
+                            .update({ payment_started_at: now })
+                            .eq('id', orderId);
+
+                        if (!updateError) {
+                            paymentStartedAt = now;
+                        }
+                    }
+
+                    // Calculate expiry time
+                    if (paymentStartedAt) {
+                        const startTime = new Date(paymentStartedAt);
+                        const expiryTime = new Date(startTime.getTime() + PAYMENT_TIMEOUT_MINUTES * 60 * 1000);
+                        setTimerExpiresAt(expiryTime);
+
+                        // Check if already expired
+                        if (expiryTime <= new Date() && !proofData) {
+                            setIsTimerExpired(true);
+                        }
+                    }
                 }
 
             } catch (err) {
@@ -177,29 +217,66 @@ export const PaymentPage: React.FC = () => {
         }
     };
 
-    // Handle change payment method
-    const handleChangePaymentMethod = async () => {
+    // Handle change payment method - show confirmation dialog
+    const handleChangePaymentMethodClick = () => {
+        setShowChangeMethodDialog(true);
+    };
+
+    // Execute change payment method after confirmation
+    const handleChangePaymentMethodConfirm = async () => {
         if (!orderId) return;
 
         // Check if order is still valid
         const isValid = await checkOrderStillValid();
-        if (!isValid) return;
+        if (!isValid) {
+            setShowChangeMethodDialog(false);
+            return;
+        }
 
+        setIsCancelling(true); // Reuse for loading state
         try {
-            const { error } = await supabase
-                .from('orders')
-                .update({ payment_method: 'pending' })
-                .eq('id', orderId);
+            // If proof was uploaded, delete it and reset timer
+            if (uploadSuccess) {
+                // Delete payment proof from database
+                await supabase.rpc('delete_payment_proof', { p_order_id: orderId });
 
-            if (error) throw error;
+                // Reset payment_started_at to now (restart 15 min timer)
+                const now = new Date().toISOString();
+                await supabase
+                    .from('orders')
+                    .update({
+                        payment_method: 'pending',
+                        payment_started_at: now
+                    })
+                    .eq('id', orderId);
+
+                // Update timer in state
+                const expiryTime = new Date(new Date(now).getTime() + PAYMENT_TIMEOUT_MINUTES * 60 * 1000);
+                setTimerExpiresAt(expiryTime);
+                setIsTimerExpired(false);
+            } else {
+                // Just reset payment method
+                await supabase
+                    .from('orders')
+                    .update({ payment_method: 'pending' })
+                    .eq('id', orderId);
+            }
 
             setSelectedPaymentMethod(null);
             setUploadSuccess(false);
+            setShowChangeMethodDialog(false);
             toast('Silakan pilih metode pembayaran baru');
         } catch (err) {
             console.error('Error resetting payment method:', err);
             toast.error('Gagal mengubah metode pembayaran');
+        } finally {
+            setIsCancelling(false);
         }
+    };
+
+    // Legacy function for components that call onChangeMethod directly
+    const handleChangePaymentMethod = () => {
+        handleChangePaymentMethodClick();
     };
 
     // Check if order can be cancelled
@@ -296,7 +373,10 @@ export const PaymentPage: React.FC = () => {
                 }
             }
 
-            // 3. Update order status
+            // 3. Delete payment proof if exists
+            await supabase.rpc('delete_payment_proof', { p_order_id: orderId });
+
+            // 4. Update order status
             const { error } = await supabase
                 .from('orders')
                 .update({ status: 'cancelled' })
@@ -368,7 +448,10 @@ export const PaymentPage: React.FC = () => {
                 }
             }
 
-            // 3. Update order status
+            // 3. Delete payment proof if exists
+            await supabase.rpc('delete_payment_proof', { p_order_id: orderId });
+
+            // 4. Update order status
             const { error } = await supabase
                 .from('orders')
                 .update({ status: 'cancelled' })
@@ -395,6 +478,49 @@ export const PaymentPage: React.FC = () => {
         const message = `Halo Bu Tuty, saya ingin bertanya mengenai pesanan #${order.id.slice(0, 8)}.`;
         openWhatsApp(activeAdminPhone, message);
     };
+
+    // Handle timer expiry - auto cancel order
+    const handleTimerExpire = useCallback(async () => {
+        if (!orderId || !order || isTimerExpired || uploadSuccess) return;
+
+        setIsTimerExpired(true);
+        toast.error('Waktu pembayaran habis. Pesanan dibatalkan.');
+
+        // Cancel order automatically
+        try {
+            // 1. Get order items
+            const { data: orderItems } = await supabase
+                .from('order_items')
+                .select('menu_id, quantity')
+                .eq('order_id', orderId);
+
+            // 2. Restore stock for each item
+            if (orderItems && order.batch_id) {
+                for (const item of orderItems) {
+                    try {
+                        await supabase.rpc('restore_stock', {
+                            p_batch_id: order.batch_id,
+                            p_menu_id: item.menu_id,
+                            p_quantity: item.quantity
+                        });
+                    } catch (restoreError) {
+                        console.error('Error restoring stock:', restoreError);
+                    }
+                }
+            }
+
+            // 3. Update order status
+            await supabase
+                .from('orders')
+                .update({ status: 'cancelled' })
+                .eq('id', orderId);
+
+            // Navigate to home after short delay
+            setTimeout(() => navigate('/'), 2000);
+        } catch (err) {
+            console.error('Error auto-cancelling order:', err);
+        }
+    }, [orderId, order, isTimerExpired, uploadSuccess, navigate]);
 
 
     if (isLoading) {
@@ -424,9 +550,17 @@ export const PaymentPage: React.FC = () => {
             <header className={styles.header}>
                 <button className={styles.backBtn} onClick={() => canCancel() ? setShowBackDialog(true) : navigate('/')}> <ArrowLeft size={20} /> </button>
                 <h1 className={styles.headerTitle}>Pembayaran</h1>
-                <button className={styles.contactBtn} onClick={handleContactAdmin} disabled={!activeAdminPhone}>
-                    <MessageCircle size={18} />
-                </button>
+                {/* Timer for pending payment orders, otherwise empty spacer */}
+                {isPending && timerExpiresAt && !isCancelled ? (
+                    <PaymentTimer
+                        expiresAt={timerExpiresAt}
+                        onExpire={handleTimerExpire}
+                        isPaused={uploadSuccess}
+                        isExpired={isTimerExpired}
+                    />
+                ) : (
+                    <div style={{ width: 40 }} />
+                )}
             </header>
             <main className={styles.main}>
                 <div className={styles.orderInfo}>
@@ -583,6 +717,20 @@ export const PaymentPage: React.FC = () => {
                 cancelText="Tetap di Sini"
                 onConfirm={handleBackToCheckout}
                 onCancel={() => setShowBackDialog(false)}
+            />
+            {/* Change Payment Method Dialog */}
+            <ConfirmDialog
+                isOpen={showChangeMethodDialog}
+                title="Ganti Metode Pembayaran?"
+                message={uploadSuccess
+                    ? "Bukti pembayaran yang sudah dikirim akan dihapus dan waktu pembayaran akan diulang dari 15 menit. Lanjutkan?"
+                    : "Anda akan memilih metode pembayaran baru. Lanjutkan?"
+                }
+                variant={uploadSuccess ? "danger" : "default"}
+                confirmText={isCancelling ? 'Memproses...' : 'Ya, Ganti'}
+                cancelText="Batal"
+                onConfirm={handleChangePaymentMethodConfirm}
+                onCancel={() => setShowChangeMethodDialog(false)}
             />
         </div>
     );

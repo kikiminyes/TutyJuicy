@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
     Search, ArrowLeft, Clock, CheckCircle, Package,
-    XCircle, ChevronRight, Phone
+    XCircle, ChevronRight, Phone, Timer
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { validatePhone, normalizePhone } from '../../utils/validation';
 import toast from 'react-hot-toast';
 import type { Order } from '../../types';
 import styles from './OrderTrackingPage.module.css';
+
+// Payment timeout in minutes (must match PaymentPage)
+const PAYMENT_TIMEOUT_MINUTES = 15;
 
 export const OrderTrackingPage: React.FC = () => {
     const [phone, setPhone] = useState('');
@@ -104,6 +107,24 @@ export const OrderTrackingPage: React.FC = () => {
         }).format(price);
     };
 
+    // Calculate remaining payment time for pending orders
+    const getRemainingPaymentTime = (order: Order): { minutes: number; expired: boolean } | null => {
+        if (order.status !== 'pending_payment' || !order.payment_started_at) {
+            return null;
+        }
+
+        const startTime = new Date(order.payment_started_at).getTime();
+        const expiryTime = startTime + PAYMENT_TIMEOUT_MINUTES * 60 * 1000;
+        const now = Date.now();
+        const remaining = expiryTime - now;
+
+        if (remaining <= 0) {
+            return { minutes: 0, expired: true };
+        }
+
+        return { minutes: Math.ceil(remaining / 60000), expired: false };
+    };
+
     return (
         <div className={styles.container}>
             {/* Header */}
@@ -188,6 +209,7 @@ export const OrderTrackingPage: React.FC = () => {
                                         const StatusIcon = statusInfo.icon;
                                         const currentStep = getStepFromStatus(order.status);
                                         const isCancelled = order.status === 'cancelled';
+                                        const remainingTime = getRemainingPaymentTime(order);
 
                                         return (
                                             <button
@@ -235,9 +257,22 @@ export const OrderTrackingPage: React.FC = () => {
                                                     <span className={styles.orderDate}>
                                                         {formatDate(order.created_at)}
                                                     </span>
-                                                    <span className={styles.orderPrice}>
-                                                        {formatPrice(order.total_amount)}
-                                                    </span>
+                                                    {/* Show remaining payment time for pending orders */}
+                                                    {remainingTime && !remainingTime.expired ? (
+                                                        <span className={`${styles.timerBadge} ${remainingTime.minutes <= 2 ? styles.timerCritical : remainingTime.minutes <= 5 ? styles.timerWarning : ''}`}>
+                                                            <Timer size={12} />
+                                                            {remainingTime.minutes} mnt tersisa
+                                                        </span>
+                                                    ) : remainingTime?.expired ? (
+                                                        <span className={`${styles.timerBadge} ${styles.timerExpired}`}>
+                                                            <Timer size={12} />
+                                                            Expired
+                                                        </span>
+                                                    ) : (
+                                                        <span className={styles.orderPrice}>
+                                                            {formatPrice(order.total_amount)}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </button>
                                         );

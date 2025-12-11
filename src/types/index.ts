@@ -54,6 +54,7 @@ export interface Order {
     total_amount: number;
     status: 'pending_payment' | 'payment_received' | 'preparing' | 'ready' | 'picked_up' | 'cancelled';
     payment_method: 'qris' | 'transfer' | 'cod' | 'pending';
+    payment_started_at: string | null;
     created_at: string;
     updated_at: string;
 }
