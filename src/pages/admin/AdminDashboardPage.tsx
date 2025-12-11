@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Card } from '../../components/ui/Card';
-import { Wallet, ShoppingBag, Clock, AlertTriangle, Activity, ArrowRight, Calendar } from 'lucide-react';
+import { Wallet, ShoppingBag, Clock, AlertTriangle, Activity, ArrowRight, Calendar, ExternalLink } from 'lucide-react';
 import styles from './AdminDashboardPage.module.css';
 
 
@@ -152,6 +152,10 @@ export const AdminDashboardPage: React.FC = () => {
                     <h1 className={styles.title}>Dashboard</h1>
                     <p className={styles.subtitle}>Overview of your business</p>
                 </div>
+                <Link to="/" target="_blank" className={styles.viewStoreBtn}>
+                    <ExternalLink size={16} />
+                    <span>Lihat Toko</span>
+                </Link>
             </div>
 
             {/* No Active Batch Alert */}

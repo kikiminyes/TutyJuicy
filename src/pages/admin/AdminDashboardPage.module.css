@@ -32,6 +32,35 @@
     font-weight: 500;
 }
 
+.viewStoreBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    color: white;
+    padding: 0.625rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(8, 145, 178, 0.25);
+    flex-shrink: 0;
+}
+
+.viewStoreBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(8, 145, 178, 0.35);
+}
+
+.viewStoreBtn svg {
+    transition: transform 0.2s;
+}
+
+.viewStoreBtn:hover svg {
+    transform: rotate(-12deg);
+}
+
 /* ===== ALERT ===== */
 .alert {
     background: #fffbeb;
@@ -522,7 +551,16 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
     .pageHeader {
+        justify-content: flex-end;
+    }
+
+    .pageHeader>div:first-child {
         display: none;
+    }
+
+    .viewStoreBtn {
+        padding: 0.5rem 0.875rem;
+        font-size: 0.8125rem;
     }
 }
 
