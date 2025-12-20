@@ -396,6 +396,16 @@ button.sectionHeader:hover {
     animation: checkPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+.validatingIcon {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-primary);
+    pointer-events: none;
+    animation: spin 1s linear infinite;
+}
+
 .input,
 .textarea {
     width: 100%;

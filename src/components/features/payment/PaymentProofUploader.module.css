@@ -100,20 +100,21 @@
   width: 100%;
   min-height: 48px;
   padding: 0.875rem 1.25rem;
-  background: linear-gradient(135deg, var(--color-primary-subtle) 0%, var(--color-accent-light) 100%);
-  border: 1px solid var(--color-primary);
+  background: white;
+  border: 2px solid var(--color-primary);
   border-radius: var(--radius-lg);
-  color: var(--color-primary-dark);
-  font-weight: 600;
+  color: var(--color-primary);
+  font-weight: 700;
   font-size: 0.9375rem;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.15);
+  box-shadow: 0 4px 6px rgba(8, 145, 178, 0.15);
 }
 
 .backButton:hover {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  color: white;
+  background: var(--color-primary-subtle);
+  border-color: var(--color-primary-dark);
+  color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(8, 145, 178, 0.25);
 }

@@ -1,9 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-// Context
-import { CartProvider } from './context/CartContext';
-
 // Components
 import { ProtectedAdminRoute } from './components/features/ProtectedAdminRoute';
 
@@ -41,7 +38,7 @@ const AppContent: React.FC = () => {
 
         <Route element={<ProtectedAdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route index element={<Navigate to="/admin/orders" replace />} />
             <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="orders" element={<AdminOrderPage />} />
             <Route path="menus" element={<AdminMenuPage />} />
@@ -61,12 +58,11 @@ const AppContent: React.FC = () => {
 
 function App() {
   return (
-    <CartProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </CartProvider>
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 
 export default App;
+

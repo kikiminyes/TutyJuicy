@@ -1,0 +1,71 @@
+{
+    "common": {
+        "total": "Total",
+        "checkout": "Checkout",
+        "cancel": "Batal",
+        "confirm": "Konfirmasi",
+        "loading": "Memuat...",
+        "error": "Terjadi kesalahan",
+        "back": "Kembali"
+    },
+    "cart": {
+        "title": "Keranjang Belanja",
+        "empty": "Keranjang Kosong",
+        "emptyMessage": "Belum ada item di keranjang belanja Anda.",
+        "continueShopping": "Lanjut Belanja",
+        "backToMenu": "Kembali ke Menu",
+        "payment": "Pembayaran",
+        "item": "Item",
+        "items": "Item",
+        "maxItemError": "Maksimal {{max}} item per produk"
+    },
+    "checkout": {
+        "title": "Checkout",
+        "orderSummary": "Pesanan",
+        "customerInfo": "Informasi Pemesan",
+        "fullName": "Nama Lengkap",
+        "whatsappNumber": "Nomor WhatsApp",
+        "notes": "Catatan (Opsional)",
+        "notesPlaceholder": "Alamat pengiriman atau catatan khusus...",
+        "namePlaceholder": "Masukkan nama lengkap",
+        "phonePlaceholder": "8123456789",
+        "phoneHint": "Ketik nomor tanpa angka 0 di depan (format: 8123456789)",
+        "required": "wajib",
+        "proceedToPayment": "Lanjut ke Pembayaran",
+        "processing": "Memproses pesanan..."
+    },
+    "menu": {
+        "loading": "Memuat menu...",
+        "add": "Tambah",
+        "soldOut": "Habis",
+        "available": "Tersedia",
+        "stockInsufficient": "Stok tidak cukup"
+    },
+    "landing": {
+        "openPreOrder": "Open Pre-Order",
+        "batchClosed": "Batch Sudah Tutup",
+        "batchClosedMessage": "Stok fresh akan segera hadir. Gabung waitlist untuk info duluan!",
+        "notifyMe": "Ingatkan Saya"
+    },
+    "validation": {
+        "phoneRequired": "Nomor telepon wajib diisi",
+        "phoneInvalid": "Format nomor tidak valid. Gunakan format: 08... atau +628...",
+        "nameRequired": "Nama wajib diisi",
+        "nameMinLength": "Nama minimal 2 karakter",
+        "nameMaxLength": "Nama maksimal 100 karakter",
+        "nameInvalidChars": "Nama hanya boleh berisi huruf, spasi, dan tanda baca umum",
+        "addressMaxLength": "Catatan alamat maksimal 500 karakter",
+        "formIncomplete": "Mohon lengkapi data dengan benar"
+    },
+    "errors": {
+        "batchClosed": "Batch pre-order telah ditutup.",
+        "batchJustClosed": "Batch pre-order baru saja ditutup.",
+        "stockVerifyFailed": "Gagal memverifikasi stok.",
+        "itemsSoldOut": "Habis: {{items}}",
+        "stockInsufficient": "Stok tidak cukup: {{items}}",
+        "invalidTotal": "Total pesanan tidak valid.",
+        "orderFailed": "Gagal membuat pesanan.",
+        "orderSuccess": "Pesanan berhasil dibuat!",
+        "cartItemsUnavailable": "Some items in your cart are no longer available"
+    }
+}

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import type { Batch } from '../../types';
 import { MenuGrid } from '../../components/features/MenuGrid';
@@ -9,6 +10,7 @@ import { Bell, Calendar } from 'lucide-react';
 import styles from './LandingPage.module.css';
 
 export const LandingPage: React.FC = () => {
+    const { t } = useTranslation();
     const [activeBatch, setActiveBatch] = useState<Batch | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [showWaitlist, setShowWaitlist] = useState(false);
@@ -60,27 +62,28 @@ export const LandingPage: React.FC = () => {
     if (isLoading) {
         return (
             <CustomerLayout>
-                <div className={styles.loadingContainer}>
-                    <div className={styles.loadingSpinner} />
+                <div className={styles.loadingContainer} role="status" aria-live="polite">
+                    <div className={styles.loadingSpinner} aria-hidden="true" />
+                    <span className="sr-only">{t('common.loading')}</span>
                 </div>
             </CustomerLayout>
         );
     }
 
     return (
-        <CustomerLayout>
+        <CustomerLayout hideCheckOrder={!activeBatch}>
             {/* Compact Hero with Batch Info */}
             {activeBatch ? (
                 <div className={styles.compactHero}>
                     <div className={styles.batchInfo}>
                         <div className={styles.batchBadge}>
-                            <span className={styles.liveDot} />
-                            Open Pre-Order
+                            <span className={styles.liveDot} aria-hidden="true" />
+                            {t('landing.openPreOrder')}
                         </div>
                         <h1 className={styles.batchTitle}>{activeBatch.title}</h1>
                         <div className={styles.batchMeta}>
                             <span className={styles.metaItem}>
-                                <Calendar size={14} />
+                                <Calendar size={14} aria-hidden="true" />
                                 {new Date(activeBatch.delivery_date).toLocaleDateString('id-ID', {
                                     weekday: 'short',
                                     day: 'numeric',
@@ -94,14 +97,18 @@ export const LandingPage: React.FC = () => {
                 /* No Active Batch - Waitlist CTA */
                 <div className={styles.inactiveHero}>
                     <div className={styles.inactiveContent}>
-                        <div className={styles.inactiveIcon}>⏳</div>
-                        <h2 className={styles.inactiveTitle}>Batch Sudah Tutup</h2>
+                        <div className={styles.inactiveIcon} aria-hidden="true">⏳</div>
+                        <h2 className={styles.inactiveTitle}>{t('landing.batchClosed')}</h2>
                         <p className={styles.inactiveText}>
-                            Stok fresh akan segera hadir. Gabung waitlist untuk info duluan!
+                            {t('landing.batchClosedMessage')}
                         </p>
-                        <button className={styles.notifyBtn} onClick={() => setShowWaitlist(true)}>
-                            <Bell size={18} />
-                            Ingatkan Saya
+                        <button
+                            className={styles.notifyBtn}
+                            onClick={() => setShowWaitlist(true)}
+                            aria-label={t('landing.notifyMe')}
+                        >
+                            <Bell size={18} aria-hidden="true" />
+                            {t('landing.notifyMe')}
                         </button>
                     </div>
                 </div>

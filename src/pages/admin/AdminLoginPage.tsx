@@ -23,7 +23,7 @@ export const AdminLoginPage: React.FC = () => {
             if (error) throw error;
 
             toast.success('Welcome back!');
-            navigate('/admin/dashboard');
+            navigate('/admin/orders');
         } catch (error: any) {
             toast.error(error.message || 'Login failed');
         } finally {

@@ -1,0 +1,71 @@
+{
+    "common": {
+        "total": "Total",
+        "checkout": "Checkout",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "loading": "Loading...",
+        "error": "An error occurred",
+        "back": "Back"
+    },
+    "cart": {
+        "title": "Shopping Cart",
+        "empty": "Cart is Empty",
+        "emptyMessage": "You haven't added any items to your cart yet.",
+        "continueShopping": "Continue Shopping",
+        "backToMenu": "Back to Menu",
+        "payment": "Payment",
+        "item": "Item",
+        "items": "Items",
+        "maxItemError": "Maximum {{max}} items per product"
+    },
+    "checkout": {
+        "title": "Checkout",
+        "orderSummary": "Order",
+        "customerInfo": "Customer Information",
+        "fullName": "Full Name",
+        "whatsappNumber": "WhatsApp Number",
+        "notes": "Notes (Optional)",
+        "notesPlaceholder": "Delivery address or special notes...",
+        "namePlaceholder": "Enter your full name",
+        "phonePlaceholder": "8123456789",
+        "phoneHint": "Enter number without leading 0 (format: 8123456789)",
+        "required": "required",
+        "proceedToPayment": "Proceed to Payment",
+        "processing": "Processing order..."
+    },
+    "menu": {
+        "loading": "Loading menu...",
+        "add": "Add",
+        "soldOut": "Sold Out",
+        "available": "Available",
+        "stockInsufficient": "Insufficient stock"
+    },
+    "landing": {
+        "openPreOrder": "Open Pre-Order",
+        "batchClosed": "Batch Closed",
+        "batchClosedMessage": "Fresh stock coming soon. Join our waitlist to get notified first!",
+        "notifyMe": "Notify Me"
+    },
+    "validation": {
+        "phoneRequired": "Phone number is required",
+        "phoneInvalid": "Invalid phone format. Use format: 08... or +628...",
+        "nameRequired": "Name is required",
+        "nameMinLength": "Name must be at least 2 characters",
+        "nameMaxLength": "Name must be less than 100 characters",
+        "nameInvalidChars": "Name can only contain letters, spaces, and common punctuation",
+        "addressMaxLength": "Notes must be less than 500 characters",
+        "formIncomplete": "Please complete all fields correctly"
+    },
+    "errors": {
+        "batchClosed": "Pre-order batch has closed.",
+        "batchJustClosed": "Pre-order batch just closed.",
+        "stockVerifyFailed": "Failed to verify stock.",
+        "itemsSoldOut": "Sold out: {{items}}",
+        "stockInsufficient": "Insufficient stock: {{items}}",
+        "invalidTotal": "Invalid order total.",
+        "orderFailed": "Failed to create order.",
+        "orderSuccess": "Order created successfully!",
+        "cartItemsUnavailable": "Some items in your cart are no longer available"
+    }
+}

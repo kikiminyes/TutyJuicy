@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useCart } from '../../context/CartContext';
+import { useTranslation } from 'react-i18next';
+import { useCart } from '../../stores/cartStore';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ShoppingBag, User, Phone, FileText, ChevronDown, ChevronUp, Trash2, Minus, Plus, Check } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, User, Phone, FileText, ChevronDown, ChevronUp, Trash2, Minus, Plus, Check, Loader2 } from 'lucide-react';
 import styles from './CheckoutPage.module.css';
 import toast from 'react-hot-toast';
 import { normalizePhone, validateName, validatePhone, validateAddress, type CheckoutFormData } from '../../utils/validation';
 import useFieldValidation from '../../hooks/useFieldValidation';
+import { EmptyCartState } from '../../components/features/EmptyCartState';
 
 export const CheckoutPage: React.FC = () => {
+    const { t } = useTranslation();
     const { items, totalPrice, totalItems, clearCart, updateQuantity, removeItem } = useCart();
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
@@ -34,19 +37,7 @@ export const CheckoutPage: React.FC = () => {
     };
 
     if (items.length === 0) {
-        return (
-            <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>
-                    <ShoppingBag size={48} />
-                </div>
-                <h2 className={styles.emptyTitle}>Keranjang Kosong</h2>
-                <p className={styles.emptyText}>Belum ada item di keranjang belanja Anda.</p>
-                <button className={styles.backToMenuBtn} onClick={() => navigate('/')}>
-                    <ArrowLeft size={18} />
-                    Kembali ke Menu
-                </button>
-            </div>
-        );
+        return <EmptyCartState variant="page" />;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +58,7 @@ export const CheckoutPage: React.FC = () => {
             nameValidation.markTouched(true);
             phoneValidation.markTouched(true);
             addressValidation.markTouched(true);
-            toast.error('Mohon lengkapi data dengan benar');
+            toast.error(t('validation.formIncomplete'));
             return;
         }
 
@@ -82,7 +73,7 @@ export const CheckoutPage: React.FC = () => {
                 .single();
 
             if (batchError || !batch) {
-                toast.error('Batch pre-order telah ditutup.');
+                toast.error(t('errors.batchClosed'));
                 navigate('/');
                 return;
             }
@@ -95,7 +86,7 @@ export const CheckoutPage: React.FC = () => {
                 .in('menu_id', menuIds);
 
             if (stockError) {
-                toast.error('Gagal memverifikasi stok.');
+                toast.error(t('errors.stockVerifyFailed'));
                 return;
             }
 
@@ -125,15 +116,15 @@ export const CheckoutPage: React.FC = () => {
             }
 
             if (outOfStockItems.length > 0) {
-                toast.error(`Habis: ${outOfStockItems.join(', ')}`);
+                toast.error(t('errors.itemsSoldOut', { items: outOfStockItems.join(', ') }));
                 return;
             }
 
             if (insufficientStockItems.length > 0) {
                 const msg = insufficientStockItems.map(
-                    item => `${item.name}: sisa ${item.available}`
+                    item => `${item.name}: ${t('menu.available').toLowerCase()} ${item.available}`
                 ).join(', ');
-                toast.error(`Stok tidak cukup: ${msg}`);
+                toast.error(t('errors.stockInsufficient', { items: msg }));
                 return;
             }
 
@@ -152,13 +143,13 @@ export const CheckoutPage: React.FC = () => {
                 .single();
 
             if (!batchRecheck || batchRecheck.status !== 'open') {
-                toast.error('Batch pre-order baru saja ditutup.');
+                toast.error(t('errors.batchJustClosed'));
                 navigate('/');
                 return;
             }
 
             if (totalPrice <= 0) {
-                toast.error('Total pesanan tidak valid.');
+                toast.error(t('errors.invalidTotal'));
                 return;
             }
 
@@ -175,12 +166,13 @@ export const CheckoutPage: React.FC = () => {
             if (orderError) throw orderError;
 
             clearCart();
-            toast.success('Pesanan berhasil dibuat!');
+            toast.success(t('errors.orderSuccess'));
             navigate(`/payment/${orderId}`);
 
-        } catch (error: any) {
+        } catch (error) {
             console.error('Checkout error:', error);
-            toast.error(error.message || 'Gagal membuat pesanan.');
+            const errorMessage = error instanceof Error ? error.message : t('errors.orderFailed');
+            toast.error(errorMessage);
         } finally {
             setIsFormLoading(false);
             setIsLoading(false);
@@ -191,36 +183,44 @@ export const CheckoutPage: React.FC = () => {
         <div className={styles.container}>
             {/* Header */}
             <header className={styles.header}>
-                <button className={styles.backBtn} onClick={() => navigate('/')}>
-                    <ArrowLeft size={20} />
+                <button
+                    className={styles.backBtn}
+                    onClick={() => navigate('/')}
+                    aria-label={t('common.back')}
+                >
+                    <ArrowLeft size={20} aria-hidden="true" />
                 </button>
-                <h1 className={styles.headerTitle}>Checkout</h1>
+                <h1 className={styles.headerTitle}>{t('checkout.title')}</h1>
                 <div className={styles.headerSpacer}></div>
             </header>
 
             <main className={styles.main}>
                 {/* Order Summary */}
-                <section className={styles.section}>
+                <section className={styles.section} aria-labelledby="order-summary-heading">
                     <button
                         className={styles.sectionHeader}
                         onClick={() => setIsOrderExpanded(!isOrderExpanded)}
+                        aria-expanded={isOrderExpanded}
+                        aria-controls="order-items"
                     >
                         <div className={styles.sectionTitle}>
-                            <ShoppingBag size={20} />
-                            <span>Pesanan ({totalItems} item)</span>
+                            <ShoppingBag size={20} aria-hidden="true" />
+                            <span id="order-summary-heading">
+                                {t('checkout.orderSummary')} ({totalItems} {totalItems > 1 ? t('cart.items') : t('cart.item')})
+                            </span>
                         </div>
-                        {isOrderExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                        {isOrderExpanded ? <ChevronUp size={20} aria-hidden="true" /> : <ChevronDown size={20} aria-hidden="true" />}
                     </button>
 
                     {isOrderExpanded && (
-                        <div className={styles.orderItems}>
+                        <div id="order-items" className={styles.orderItems}>
                             {items.map((item) => (
                                 <div key={item.id} className={styles.orderItem}>
                                     <div className={styles.itemImage}>
                                         {item.image_url ? (
                                             <img src={item.image_url} alt={item.name} />
                                         ) : (
-                                            <span className={styles.itemPlaceholder}>🥤</span>
+                                            <span className={styles.itemPlaceholder} aria-hidden="true">🥤</span>
                                         )}
                                     </div>
                                     <div className={styles.itemDetails}>
@@ -228,22 +228,24 @@ export const CheckoutPage: React.FC = () => {
                                         <span className={styles.itemPrice}>{formatPrice(item.price)}</span>
                                     </div>
                                     <div className={styles.itemActions}>
-                                        <div className={styles.qtyControls}>
+                                        <div className={styles.qtyControls} role="group" aria-label={`Quantity controls for ${item.name}`}>
                                             <button
                                                 className={styles.qtyBtn}
                                                 onClick={() => {
                                                     if (item.quantity === 1) removeItem(item.id);
                                                     else updateQuantity(item.id, -1);
                                                 }}
+                                                aria-label={item.quantity === 1 ? `Remove ${item.name}` : `Decrease quantity of ${item.name}`}
                                             >
-                                                {item.quantity === 1 ? <Trash2 size={14} /> : <Minus size={14} />}
+                                                {item.quantity === 1 ? <Trash2 size={14} aria-hidden="true" /> : <Minus size={14} aria-hidden="true" />}
                                             </button>
-                                            <span className={styles.qtyValue}>{item.quantity}</span>
+                                            <span className={styles.qtyValue} aria-live="polite">{item.quantity}</span>
                                             <button
                                                 className={styles.qtyBtn}
                                                 onClick={() => updateQuantity(item.id, 1)}
+                                                aria-label={`Increase quantity of ${item.name}`}
                                             >
-                                                <Plus size={14} />
+                                                <Plus size={14} aria-hidden="true" />
                                             </button>
                                         </div>
                                         <span className={styles.itemSubtotal}>
@@ -257,18 +259,18 @@ export const CheckoutPage: React.FC = () => {
                 </section>
 
                 {/* Customer Form */}
-                <section className={styles.section}>
+                <section className={styles.section} aria-labelledby="customer-info-heading">
                     <div className={styles.sectionHeader}>
                         <div className={styles.sectionTitle}>
-                            <User size={20} />
-                            <span>Informasi Pemesan</span>
+                            <User size={20} aria-hidden="true" />
+                            <span id="customer-info-heading">{t('checkout.customerInfo')}</span>
                         </div>
                     </div>
 
-                    <form id="checkout-form" onSubmit={handleSubmit} className={styles.form}>
+                    <form id="checkout-form" onSubmit={handleSubmit} className={styles.form} noValidate>
                         <div className={styles.formGroup}>
                             <label htmlFor="name" className={styles.label}>
-                                Nama Lengkap <span className={styles.required}>*</span>
+                                {t('checkout.fullName')} <span className={styles.required}>*</span>
                             </label>
                             <div className={styles.inputWrapper}>
                                 <input
@@ -281,23 +283,31 @@ export const CheckoutPage: React.FC = () => {
                                         setFormData({ ...formData, name: e.target.value });
                                     }}
                                     onBlur={() => nameValidation.markTouched(true)}
-                                    placeholder="Masukkan nama lengkap"
+                                    placeholder={t('checkout.namePlaceholder')}
                                     aria-invalid={!!nameValidation.error}
+                                    aria-describedby={nameValidation.error ? 'name-error' : undefined}
                                 />
-                                {nameValidation.isValid && nameValidation.touched && (
-                                    <Check size={18} className={styles.checkIcon} />
+                                {nameValidation.isValidating && (
+                                    <Loader2 size={18} className={styles.validatingIcon} aria-hidden="true" />
+                                )}
+                                {nameValidation.isValid && nameValidation.touched && !nameValidation.isValidating && (
+                                    <Check size={18} className={styles.checkIcon} aria-hidden="true" />
                                 )}
                             </div>
-                            {nameValidation.error && <span className={styles.errorText}>{nameValidation.error}</span>}
+                            {nameValidation.error && (
+                                <span id="name-error" className={styles.errorText} role="alert">
+                                    {nameValidation.error}
+                                </span>
+                            )}
                         </div>
 
                         <div className={styles.formGroup}>
                             <label htmlFor="phone" className={styles.label}>
-                                <Phone size={14} />
-                                Nomor WhatsApp <span className={styles.required}>*</span>
+                                <Phone size={14} aria-hidden="true" />
+                                {t('checkout.whatsappNumber')} <span className={styles.required}>*</span>
                             </label>
                             <div className={`${styles.inputWrapper} ${styles.phoneInputWrapper}`}>
-                                <span className={styles.phonePrefix}>+62</span>
+                                <span className={styles.phonePrefix} aria-hidden="true">+62</span>
                                 <input
                                     type="tel"
                                     id="phone"
@@ -311,21 +321,31 @@ export const CheckoutPage: React.FC = () => {
                                         setFormData({ ...formData, phone: raw });
                                     }}
                                     onBlur={() => phoneValidation.markTouched(true)}
-                                    placeholder="8123456789"
+                                    placeholder={t('checkout.phonePlaceholder')}
                                     aria-invalid={!!phoneValidation.error}
+                                    aria-describedby="phone-hint phone-error"
                                 />
-                                {phoneValidation.isValid && phoneValidation.touched && (
-                                    <Check size={18} className={styles.checkIcon} />
+                                {phoneValidation.isValidating && (
+                                    <Loader2 size={18} className={styles.validatingIcon} aria-hidden="true" />
+                                )}
+                                {phoneValidation.isValid && phoneValidation.touched && !phoneValidation.isValidating && (
+                                    <Check size={18} className={styles.checkIcon} aria-hidden="true" />
                                 )}
                             </div>
-                            {phoneValidation.error && <span className={styles.errorText}>{phoneValidation.error}</span>}
-                            <span className={styles.helpText}>Ketik nomor tanpa angka 0 di depan (format: 8123456789)</span>
+                            {phoneValidation.error && (
+                                <span id="phone-error" className={styles.errorText} role="alert">
+                                    {phoneValidation.error}
+                                </span>
+                            )}
+                            <span id="phone-hint" className={styles.helpText}>
+                                {t('checkout.phoneHint')}
+                            </span>
                         </div>
 
                         <div className={styles.formGroup}>
                             <label htmlFor="address" className={styles.label}>
-                                <FileText size={14} />
-                                Catatan (Opsional)
+                                <FileText size={14} aria-hidden="true" />
+                                {t('checkout.notes')}
                             </label>
                             <div className={styles.inputWrapper}>
                                 <textarea
@@ -334,15 +354,23 @@ export const CheckoutPage: React.FC = () => {
                                     value={formData.address}
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                     onBlur={() => addressValidation.markTouched(true)}
-                                    placeholder="Alamat pengiriman atau catatan khusus..."
+                                    placeholder={t('checkout.notesPlaceholder')}
                                     rows={3}
                                     aria-invalid={!!addressValidation.error}
+                                    aria-describedby={addressValidation.error ? 'address-error' : undefined}
                                 />
-                                {addressValidation.isValid && addressValidation.touched && (
-                                    <Check size={18} className={styles.checkIcon} />
+                                {addressValidation.isValidating && (
+                                    <Loader2 size={18} className={styles.validatingIcon} aria-hidden="true" />
+                                )}
+                                {addressValidation.isValid && addressValidation.touched && !addressValidation.isValidating && (
+                                    <Check size={18} className={styles.checkIcon} aria-hidden="true" />
                                 )}
                             </div>
-                            {addressValidation.error && <span className={styles.errorText}>{addressValidation.error}</span>}
+                            {addressValidation.error && (
+                                <span id="address-error" className={styles.errorText} role="alert">
+                                    {addressValidation.error}
+                                </span>
+                            )}
                         </div>
                     </form>
                 </section>
@@ -351,8 +379,8 @@ export const CheckoutPage: React.FC = () => {
             {isFormLoading && (
                 <div className={styles.formOverlay} role="status" aria-live="polite">
                     <div className={styles.formOverlayContent}>
-                        <span className={styles.loadingSpinner} aria-hidden></span>
-                        <div>Memproses pesanan...</div>
+                        <span className={styles.loadingSpinner} aria-hidden="true"></span>
+                        <div>{t('checkout.processing')}</div>
                     </div>
                 </div>
             )}
@@ -361,7 +389,7 @@ export const CheckoutPage: React.FC = () => {
             <footer className={styles.footer}>
                 <div className={styles.footerContent}>
                     <div className={styles.totalSection}>
-                        <span className={styles.totalLabel}>Total</span>
+                        <span className={styles.totalLabel}>{t('common.total')}</span>
                         <span className={styles.totalValue}>{formatPrice(totalPrice)}</span>
                     </div>
                     <button
@@ -369,11 +397,12 @@ export const CheckoutPage: React.FC = () => {
                         form="checkout-form"
                         className={styles.submitBtn}
                         disabled={isLoading}
+                        aria-busy={isLoading}
                     >
                         {isLoading ? (
-                            <span className={styles.loadingSpinner}></span>
+                            <span className={styles.loadingSpinner} aria-hidden="true"></span>
                         ) : (
-                            'Lanjut ke Pembayaran'
+                            t('checkout.proceedToPayment')
                         )}
                     </button>
                 </div>

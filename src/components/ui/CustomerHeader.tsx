@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 import { OrderLookupModal } from './OrderLookupModal';
 import styles from './CustomerHeader.module.css';
 
-export const CustomerHeader: React.FC = () => {
+export const CustomerHeader: React.FC<{ hideCheckOrder?: boolean }> = ({ hideCheckOrder = false }) => {
     const [showLookup, setShowLookup] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -30,13 +30,15 @@ export const CustomerHeader: React.FC = () => {
                 </Link>
 
                 <div className={styles.actions}>
-                    <button
-                        className={styles.checkOrderBtn}
-                        onClick={() => setShowLookup(true)}
-                    >
-                        <Search size={16} />
-                        <span className={styles.buttonText}>Cek Pesanan</span>
-                    </button>
+                    {!hideCheckOrder && (
+                        <button
+                            className={styles.checkOrderBtn}
+                            onClick={() => setShowLookup(true)}
+                        >
+                            <Search size={16} />
+                            <span className={styles.buttonText}>Cek Pesanan</span>
+                        </button>
+                    )}
                 </div>
             </header>
 

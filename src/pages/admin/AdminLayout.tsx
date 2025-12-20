@@ -72,13 +72,13 @@ export const AdminLayout: React.FC = () => {
         {
             title: 'Overview',
             items: [
+                { path: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
                 { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
             ]
         },
         {
             title: 'Management',
             items: [
-                { path: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
                 { path: '/admin/menus', icon: Coffee, label: 'Menu Items' },
                 { path: '/admin/batches', icon: Layers, label: 'Batches' },
                 { path: '/admin/waitlist', icon: Users, label: 'Waitlist' },

@@ -7,7 +7,8 @@ import { PaymentTimer } from '../../components/ui/PaymentTimer';
 import { PaymentProgressTracker, PaymentMethodSelector, PaymentProofUploader, OrderStatusTimeline } from '../../components/features/payment';
 import {
     ArrowLeft, CheckCircle, XCircle,
-    MessageCircle, X, Loader2, Clock, Trophy, Package
+    MessageCircle, X, Loader2, Clock, Trophy, Package,
+    ChevronDown, ChevronUp
 } from 'lucide-react';
 import styles from './PaymentPage.module.css';
 import toast from 'react-hot-toast';
@@ -41,6 +42,7 @@ export const PaymentPage: React.FC = () => {
     const [showBackDialog, setShowBackDialog] = useState(false);
     const [showChangeMethodDialog, setShowChangeMethodDialog] = useState(false);
     const [isCancelling, setIsCancelling] = useState(false);
+    const [showDetails, setShowDetails] = useState(false); // Default compact
 
     const [activeAdminPhone, setActiveAdminPhone] = useState<string | null>(null);
 
@@ -570,24 +572,34 @@ export const PaymentPage: React.FC = () => {
                         <span className={styles.customerPhone}>{order.customer_phone}</span>
                     </div>
 
-                    <div className={styles.itemsList}>
-                        {order.order_items?.map((item, index) => (
-                            <div key={index} className={styles.itemRow}>
-                                <div className={styles.itemMeta}>
-                                    <span className={styles.itemQty}>{item.quantity}x</span>
-                                    <span className={styles.itemName}>{item.menus?.name || 'Menu Item'}</span>
-                                </div>
-                                <span className={styles.itemPrice}>
-                                    {formatPrice(item.quantity * item.price_per_item)}
-                                </span>
+                    {showDetails && (
+                        <>
+                            <div className={styles.itemsList}>
+                                {order.order_items?.map((item, index) => (
+                                    <div key={index} className={styles.itemRow}>
+                                        <div className={styles.itemMeta}>
+                                            <span className={styles.itemQty}>{item.quantity}x</span>
+                                            <span className={styles.itemName}>{item.menus?.name || 'Menu Item'}</span>
+                                        </div>
+                                        <span className={styles.itemPrice}>
+                                            {formatPrice(item.quantity * item.price_per_item)}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                            <div className={styles.divider} />
+                        </>
+                    )}
 
-                    <div className={styles.divider} />
-
-                    <div className={styles.totalRow}>
-                        <span className={styles.totalLabel}>Total Tagihan</span>
+                    <div
+                        className={styles.totalRow}
+                        onClick={() => setShowDetails(!showDetails)}
+                        style={{ cursor: 'pointer', userSelect: 'none' }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span className={styles.totalLabel}>Total Tagihan</span>
+                            {showDetails ? <ChevronUp size={16} className={styles.toggleIcon} /> : <ChevronDown size={16} className={styles.toggleIcon} />}
+                        </div>
                         <span className={styles.orderTotal}>{formatPrice(displayTotal)}</span>
                     </div>
                 </div>
@@ -600,8 +612,10 @@ export const PaymentPage: React.FC = () => {
                     </div>
                 ) : (
                     <>
-                        {/* Progress Tracker */}
-                        <PaymentProgressTracker currentStep={currentStep} />
+                        {/* Progress Tracker - Only show when a method is selected or order is processed */}
+                        {(selectedPaymentMethod || !isPending) && (
+                            <PaymentProgressTracker currentStep={currentStep} />
+                        )}
                         {/* Payment Method Selection */}
                         {isPending && !selectedPaymentMethod && (
                             <>

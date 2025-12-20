@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { supabase } from '../../lib/supabase';
 import type { Menu } from '../../types';
 import { Card } from '../ui/Card';
 import { ImageCarousel } from '../ui/ImageCarousel';
 import { Plus, Minus } from 'lucide-react';
 import styles from './MenuGrid.module.css';
-import { useCart } from '../../context/CartContext';
+import { useCart } from '../../stores/cartStore';
 import toast from 'react-hot-toast';
 
 interface MenuGridProps {
@@ -18,6 +19,7 @@ interface MenuItemWithStock extends Menu {
 }
 
 export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
+    const { t } = useTranslation();
     const [menuItems, setMenuItems] = useState<MenuItemWithStock[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const { items, addItem, updateQuantity, removeItem } = useCart();
@@ -95,12 +97,16 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
     }, [batchId, fetchMenuAndStock]);
 
     if (isLoading) {
-        return <div className={styles.loading}>Loading menu...</div>;
+        return (
+            <div className={styles.loading} role="status" aria-live="polite">
+                {t('menu.loading')}
+            </div>
+        );
     }
 
     return (
         <div>
-            <div className={styles.grid}>
+            <div className={styles.grid} role="list" aria-label="Menu items">
                 {menuItems.map((item) => {
                     const isSoldOut = item.quantity_available <= 0;
                     return (
@@ -116,11 +122,11 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
                                         className={styles.carousel}
                                     />
                                 ) : (
-                                    <div className={styles.placeholderImage}>🥤</div>
+                                    <div className={styles.placeholderImage} aria-hidden="true">🥤</div>
                                 )}
                                 {isSoldOut && (
                                     <div className={styles.soldOutOverlay}>
-                                        <span className={styles.soldOutText}>Sold Out</span>
+                                        <span className={styles.soldOutText}>{t('menu.soldOut')}</span>
                                     </div>
                                 )}
                             </div>
@@ -139,8 +145,13 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
 
                                 <div className={styles.footer}>
                                     <div className={styles.stockInfo}>
-                                        <span className={`${styles.stockDot} ${item.quantity_available > 5 ? styles.green : item.quantity_available > 0 ? styles.yellow : styles.red}`}></span>
-                                        {item.quantity_available > 0 ? `${item.quantity_available} Available` : 'Habis'}
+                                        <span
+                                            className={`${styles.stockDot} ${item.quantity_available > 5 ? styles.green : item.quantity_available > 0 ? styles.yellow : styles.red}`}
+                                            aria-hidden="true"
+                                        ></span>
+                                        <span aria-label={`${item.quantity_available} ${t('menu.available').toLowerCase()}`}>
+                                            {item.quantity_available > 0 ? `${item.quantity_available} ${t('menu.available')}` : t('menu.soldOut')}
+                                        </span>
                                     </div>
 
                                     {(() => {
@@ -150,29 +161,38 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
 
                                         if (qty > 0) {
                                             return (
-                                                <div className={styles.qtyControls}>
+                                                <div
+                                                    className={styles.qtyControls}
+                                                    role="group"
+                                                    aria-label={`Quantity controls for ${item.name}`}
+                                                >
                                                     <button
                                                         className={styles.qtyBtn}
                                                         onClick={() => {
                                                             if (qty === 1) removeItem(item.id);
                                                             else updateQuantity(item.id, -1);
                                                         }}
+                                                        aria-label={qty === 1 ? `Remove ${item.name}` : `Decrease quantity of ${item.name}`}
                                                     >
-                                                        <Minus size={14} />
+                                                        <Minus size={14} aria-hidden="true" />
                                                     </button>
-                                                    <span className={styles.qtyText}>{qty}</span>
+                                                    <span className={styles.qtyText} aria-live="polite">
+                                                        {qty}
+                                                    </span>
                                                     <button
                                                         className={styles.qtyBtn}
                                                         onClick={() => {
                                                             if (canAddMore) {
-                                                                updateQuantity(item.id, 1);
+                                                                addItem(item, item.quantity_available);
                                                             } else {
-                                                                toast.error('Stok tidak cukup');
+                                                                toast.error(t('menu.stockInsufficient'));
                                                             }
                                                         }}
                                                         disabled={!canAddMore}
+                                                        aria-label={`Increase quantity of ${item.name}`}
+                                                        aria-disabled={!canAddMore}
                                                     >
-                                                        <Plus size={14} />
+                                                        <Plus size={14} aria-hidden="true" />
                                                     </button>
                                                 </div>
                                             );
@@ -182,9 +202,12 @@ export const MenuGrid: React.FC<MenuGridProps> = ({ batchId }) => {
                                             <button
                                                 className={styles.addBtn}
                                                 disabled={item.quantity_available <= 0}
-                                                onClick={() => addItem(item)}
+                                                onClick={() => addItem(item, item.quantity_available)}
+                                                aria-label={`${t('menu.add')} ${item.name} to cart`}
+                                                aria-disabled={item.quantity_available <= 0}
                                             >
-                                                <span className={styles.addText}>Add</span> <Plus size={20} />
+                                                <span className={styles.addText}>{t('menu.add')}</span>
+                                                <Plus size={20} aria-hidden="true" />
                                             </button>
                                         );
                                     })()}
