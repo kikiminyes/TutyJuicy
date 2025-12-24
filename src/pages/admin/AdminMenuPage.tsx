@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { Menu } from '../../types';
+import type { Batch, Menu } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog';
@@ -8,6 +8,22 @@ import { Plus, Edit, Trash2, Image as ImageIcon, UtensilsCrossed, Search } from 
 import styles from './AdminMenuPage.module.css';
 import toast from 'react-hot-toast';
 import { MenuFormModal } from './MenuFormModal';
+
+type BatchStockWithBatch = {
+    batch_id: string;
+    batches?: Array<{
+        id: string;
+        title: string;
+        status: Batch['status'];
+    }> | null;
+};
+
+const getErrorCode = (error: unknown) => {
+    if (typeof error === 'object' && error && 'code' in error) {
+        return (error as { code?: string }).code ?? null;
+    }
+    return null;
+};
 
 export const AdminMenuPage: React.FC = () => {
     const [menus, setMenus] = useState<Menu[]>([]);
@@ -61,12 +77,16 @@ export const AdminMenuPage: React.FC = () => {
 
             if (error) throw error;
 
-            const activeBatches = batchStocks?.filter(
-                (bs: any) => bs.batches?.status === 'draft' || bs.batches?.status === 'open'
-            ) || [];
+            const batchStocksData = (batchStocks || []) as BatchStockWithBatch[];
+            const activeBatches = batchStocksData
+                .flatMap((bs) => bs.batches || [])
+                .filter((batch) => batch.status === 'draft' || batch.status === 'open');
 
             if (activeBatches.length > 0) {
-                const batchNames = activeBatches.map((bs: any) => bs.batches?.title).join(', ');
+                const batchNames = activeBatches
+                    .map((batch) => batch.title)
+                    .filter((title): title is string => Boolean(title))
+                    .join(', ');
                 setDeleteWarning(`This menu is used in active batches: ${batchNames}. Deleting will remove it from these batches.`);
             } else {
                 setDeleteWarning(null);
@@ -95,9 +115,9 @@ export const AdminMenuPage: React.FC = () => {
             setMenuToDelete(null);
             setDeleteWarning(null);
             fetchMenus();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Delete error:', error);
-            if (error.code === '23503') {
+            if (getErrorCode(error) === '23503') {
                 toast.error('Cannot delete menu: It has associated orders. Remove from batches first.');
             } else {
                 toast.error('Failed to delete menu');

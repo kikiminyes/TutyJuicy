@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Menu } from '../../types';
 import { Button } from '../../components/ui/Button';
@@ -28,23 +28,7 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
     const [isDragging, setIsDragging] = useState(false);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-    useEffect(() => {
-        if (menuToEdit) {
-            setFormData({
-                name: menuToEdit.name,
-                price: menuToEdit.price.toString(),
-                description: menuToEdit.description || '',
-                size: menuToEdit.size || '',
-            });
-            // Fetch existing images
-            fetchMenuImages(menuToEdit.id);
-        } else {
-            setFormData({ name: '', price: '', description: '', size: '' });
-            setImages([]);
-        }
-    }, [menuToEdit]);
-
-    const fetchMenuImages = async (menuId: string) => {
+    const fetchMenuImages = useCallback(async (menuId: string) => {
         try {
             const { data, error } = await supabase
                 .from('menu_images')
@@ -72,7 +56,23 @@ export const MenuFormModal: React.FC<MenuFormModalProps> = ({ isOpen, onClose, o
                 setImages([{ url: menuToEdit.image_url }]);
             }
         }
-    };
+    }, [menuToEdit]);
+
+    useEffect(() => {
+        if (menuToEdit) {
+            setFormData({
+                name: menuToEdit.name,
+                price: menuToEdit.price.toString(),
+                description: menuToEdit.description || '',
+                size: menuToEdit.size || '',
+            });
+            // Fetch existing images
+            fetchMenuImages(menuToEdit.id);
+        } else {
+            setFormData({ name: '', price: '', description: '', size: '' });
+            setImages([]);
+        }
+    }, [menuToEdit, fetchMenuImages]);
 
     if (!isOpen) return null;
 

@@ -50,7 +50,7 @@ export const OrderTrackingPage: React.FC = () => {
             if (!data || data.length === 0) {
                 toast('Tidak ada pesanan ditemukan', { icon: 'ℹ️' });
             }
-        } catch (error: any) {
+        } catch {
             toast.error('Gagal mencari pesanan');
         } finally {
             setIsLoading(false);
@@ -109,7 +109,7 @@ export const OrderTrackingPage: React.FC = () => {
 
     // Calculate remaining payment time for pending orders
     const getRemainingPaymentTime = (order: Order): { minutes: number; expired: boolean } | null => {
-        if (order.status !== 'pending_payment' || !order.payment_started_at) {
+        if (order.status !== 'pending_payment' || !order.payment_started_at || order.payment_method === 'cod') {
             return null;
         }
 

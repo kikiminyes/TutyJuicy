@@ -124,8 +124,8 @@ export const AdminPaymentSettingsPage: React.FC = () => {
         setIsSaving(true);
 
         try {
-            // Exclude admin_phone_number as it's managed in AdminContactPage
-            const { id, created_at, admin_phone_number, ...updates } = settings;
+            // Exclude fields not managed here
+            const { id: _id, created_at: _createdAt, admin_phone_number: _adminPhone, ...updates } = settings;
 
             // Trim values before saving
             const trimmedUpdates = {

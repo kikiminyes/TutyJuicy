@@ -58,7 +58,8 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
 
     // Reset to first image when images change
     useEffect(() => {
-        setCurrentIndex(0);
+        const timeoutId = setTimeout(() => setCurrentIndex(0), 0);
+        return () => clearTimeout(timeoutId);
     }, [images]);
 
     // Single image - no carousel needed

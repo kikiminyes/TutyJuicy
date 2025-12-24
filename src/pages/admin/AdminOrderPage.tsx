@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Order } from '../../types';
 import { ClipboardList, Archive, Clock, CheckSquare, Square, Check, Trash2, Search, X, Timer } from 'lucide-react';
@@ -42,7 +42,7 @@ export const AdminOrderPage: React.FC = () => {
         fetchCurrentBatch();
     }, []);
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             let query = supabase
                 .from('orders')
@@ -81,7 +81,7 @@ export const AdminOrderPage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [filter, viewMode, currentBatchId, searchQuery]);
 
     useEffect(() => {
         fetchOrders();
@@ -97,7 +97,7 @@ export const AdminOrderPage: React.FC = () => {
         return () => {
             subscription.unsubscribe();
         };
-    }, [filter, viewMode, currentBatchId, searchQuery]);
+    }, [fetchOrders]);
 
     // Close dropdown when clicking outside
     useEffect(() => {

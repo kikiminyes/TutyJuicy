@@ -1,10 +1,8 @@
 /// <reference types="cypress" />
 
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      login(email: string, password: string): Chainable<void>;
-    }
+declare module 'cypress' {
+  interface Chainable {
+    login(email: string, password: string): Chainable<void>;
   }
 }
 

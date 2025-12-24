@@ -8,9 +8,10 @@ export const generateOrderMessage = (order: Order, items: OrderItem[]) => {
     const header = `*New Order #${order.id.slice(0, 8)}*`;
     const customer = `Name: ${order.customer_name}\nPhone: ${order.customer_phone}\nAddress: ${order.customer_address || '-'}`;
 
+    type OrderItemWithMenu = OrderItem & { menu?: { name?: string } | null };
+
     const itemsList = items.map(item => {
-        // Note: We assume item.menu is populated or we use a fallback
-        const menuName = (item as any).menu?.name || 'Item';
+        const menuName = (item as OrderItemWithMenu).menu?.name || 'Item';
         return `- ${item.quantity}x ${menuName} (${formatCurrency(item.price_per_item * item.quantity)})`;
     }).join('\n');
 

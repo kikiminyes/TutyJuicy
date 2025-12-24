@@ -22,6 +22,23 @@ interface StockItem {
     quantity_reserved: number;
 }
 
+type StockRow = {
+    id: string;
+    menu_id: string;
+    quantity_available: number;
+    quantity_reserved: number;
+    menus:
+        | Array<{
+            name: string;
+            image_url: string | null;
+        }>
+        | {
+            name: string;
+            image_url: string | null;
+        }
+        | null;
+};
+
 export const EditStockModal: React.FC<EditStockModalProps> = ({ isOpen, batch, onClose, onSuccess }) => {
     const [stockItems, setStockItems] = useState<StockItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -50,17 +67,21 @@ export const EditStockModal: React.FC<EditStockModalProps> = ({ isOpen, batch, o
 
                 if (error) throw error;
 
-                const formattedData: StockItem[] = (data || []).map((item: any) => ({
-                    id: item.id,
-                    menu_id: item.menu_id,
-                    menu_name: item.menus.name,
-                    menu_image: item.menus.image_url,
-                    quantity_available: item.quantity_available,
-                    quantity_reserved: item.quantity_reserved
-                }));
+                const formattedData: StockItem[] = ((data || []) as StockRow[]).map((item) => {
+                    const menu = Array.isArray(item.menus) ? item.menus[0] : item.menus;
+
+                    return {
+                        id: item.id,
+                        menu_id: item.menu_id,
+                        menu_name: menu?.name ?? 'Unknown',
+                        menu_image: menu?.image_url ?? undefined,
+                        quantity_available: item.quantity_available,
+                        quantity_reserved: item.quantity_reserved
+                    };
+                });
 
                 setStockItems(formattedData);
-            } catch (error: any) {
+            } catch (error) {
                 console.error('Error fetching stock data:', error);
                 toast.error('Failed to load stock data');
             } finally {
@@ -133,9 +154,10 @@ export const EditStockModal: React.FC<EditStockModalProps> = ({ isOpen, batch, o
 
             toast.success('Stock updated successfully!');
             onSuccess();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error updating stock:', error);
-            toast.error(`Failed: ${error.message || 'Unknown error'}`);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed: ${message}`);
         } finally {
             setIsLoading(false);
         }
@@ -232,7 +254,7 @@ export const EditStockModal: React.FC<EditStockModalProps> = ({ isOpen, batch, o
                                                     )}
                                                     {invalid && (
                                                         <span className={styles.errorHint}>
-                                                            Available must be ≥ Reserved
+                                                            Available must be &gt;= reserved
                                                         </span>
                                                     )}
                                                 </div>

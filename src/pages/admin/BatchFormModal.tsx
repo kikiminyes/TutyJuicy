@@ -141,9 +141,10 @@ export const BatchFormModal: React.FC<BatchFormModalProps> = ({ isOpen, onClose,
             }
 
             onSuccess();
-        } catch (error: any) {
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             console.error('Error:', error);
-            toast.error(`Failed: ${error.message || 'Unknown error'}`);
+            toast.error(`Failed: ${message}`);
         } finally {
             setIsLoading(false);
         }

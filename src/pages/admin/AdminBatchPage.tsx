@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { Batch, BatchWithStock } from '../../types';
+import type { Batch, BatchStock, Menu, Order } from '../../types';
 import { Button } from '../../components/ui/Button';
 import { Tabs } from '../../components/ui/Tabs';
 import { Dropdown, type DropdownItem } from '../../components/ui/Dropdown';
@@ -14,8 +14,35 @@ import toast from 'react-hot-toast';
 import { BatchFormModal } from './BatchFormModal';
 import { EditStockModal } from './EditStockModal';
 
+type OrderSummary = Pick<Order, 'batch_id' | 'total_amount' | 'status'>;
+
+type OrderStat = {
+    count: number;
+    revenue: number;
+};
+
+type BatchStockWithMenu = {
+    menu_id?: string | null;
+    quantity_available: number;
+    quantity_reserved: number;
+    menus?: Pick<Menu, 'id' | 'name' | 'image_url'> | null;
+};
+
+type BatchWithStockDetails = Batch & {
+    batch_stocks?: BatchStockWithMenu[];
+    total_items?: number;
+    total_quantity?: number;
+    total_reserved?: number;
+    order_count?: number;
+    total_revenue?: number;
+};
+
+type BatchWithStocksFull = Batch & {
+    batch_stocks: BatchStock[];
+};
+
 export const AdminBatchPage: React.FC = () => {
-    const [batches, setBatches] = useState<BatchWithStock[]>([]);
+    const [batches, setBatches] = useState<BatchWithStockDetails[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'active' | 'closed'>('active');
 
@@ -23,7 +50,7 @@ export const AdminBatchPage: React.FC = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [batchToEdit, setBatchToEdit] = useState<Batch | null>(null);
     const [batchForStockEdit, setBatchForStockEdit] = useState<Batch | null>(null);
-    const [selectedBatch, setSelectedBatch] = useState<BatchWithStock | null>(null); // For detail modal
+    const [selectedBatch, setSelectedBatch] = useState<BatchWithStockDetails | null>(null); // For detail modal
 
     // Inline stock editing
     const [editingStockId, setEditingStockId] = useState<string | null>(null);
@@ -46,6 +73,7 @@ export const AdminBatchPage: React.FC = () => {
                 .select(`
                     *,
                     batch_stocks (
+                        menu_id,
                         quantity_available,
                         quantity_reserved,
                         menus (
@@ -64,7 +92,12 @@ export const AdminBatchPage: React.FC = () => {
                 .from('orders')
                 .select('batch_id, total_amount, status');
 
-            const orderStats = (orders || []).reduce((acc: any, order: any) => {
+            const ordersData = (orders || []) as OrderSummary[];
+            const orderStats = ordersData.reduce<Record<string, OrderStat>>((acc, order) => {
+                if (!order.batch_id) {
+                    return acc;
+                }
+
                 if (!acc[order.batch_id]) {
                     acc[order.batch_id] = { count: 0, revenue: 0 };
                 }
@@ -79,13 +112,14 @@ export const AdminBatchPage: React.FC = () => {
                 return acc;
             }, {});
 
-            const batchesWithStock = data.map((batch: any) => {
+            const batchData = (data || []) as BatchWithStockDetails[];
+            const batchesWithStock = batchData.map((batch) => {
                 const totalAvailable = batch.batch_stocks?.reduce(
-                    (sum: number, s: any) => sum + (s.quantity_available || 0), 0
+                    (sum, stock) => sum + (stock.quantity_available || 0), 0
                 ) || 0;
 
                 const totalReserved = batch.batch_stocks?.reduce(
-                    (sum: number, s: any) => sum + (s.quantity_reserved || 0), 0
+                    (sum, stock) => sum + (stock.quantity_reserved || 0), 0
                 ) || 0;
 
                 return {
@@ -178,6 +212,7 @@ export const AdminBatchPage: React.FC = () => {
                 .single();
 
             if (fetchError) throw fetchError;
+            if (!batchData) throw new Error('Batch not found');
 
             const newDeliveryDate = new Date(batch.delivery_date);
             newDeliveryDate.setDate(newDeliveryDate.getDate() + 7);
@@ -194,7 +229,8 @@ export const AdminBatchPage: React.FC = () => {
 
             if (batchError) throw batchError;
 
-            const stockInserts = batchData.batch_stocks.map((stock: any) => ({
+            const batchRecord = batchData as BatchWithStocksFull;
+            const stockInserts = batchRecord.batch_stocks.map((stock) => ({
                 batch_id: newBatch.id,
                 menu_id: stock.menu_id,
                 quantity_available: stock.quantity_available,
@@ -209,9 +245,10 @@ export const AdminBatchPage: React.FC = () => {
 
             toast.success('Batch duplicated successfully!');
             fetchBatches();
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error duplicating batch:', error);
-            toast.error(`Failed to duplicate batch: ${error.message} `);
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            toast.error(`Failed to duplicate batch: ${message}`);
         }
     };
 
@@ -251,10 +288,15 @@ export const AdminBatchPage: React.FC = () => {
     };
 
     // Inline stock update
-    const handleInlineStockSave = async (menuId: string, newTotal: number, reserved: number) => {
+    const handleInlineStockSave = async (menuId: string | null | undefined, newTotal: number, reserved: number) => {
         // Can't reduce below reserved
         if (newTotal < reserved) {
             toast.error(`Cannot set stock below reserved amount (${reserved})`);
+            return;
+        }
+
+        if (!menuId || !selectedBatch?.id) {
+            toast.error('Missing menu or batch data');
             return;
         }
 
@@ -264,7 +306,7 @@ export const AdminBatchPage: React.FC = () => {
             const { error } = await supabase
                 .from('batch_stocks')
                 .update({ quantity_available: newAvailable })
-                .eq('batch_id', selectedBatch?.id)
+                .eq('batch_id', selectedBatch.id)
                 .eq('menu_id', menuId);
 
             if (error) throw error;
@@ -275,12 +317,13 @@ export const AdminBatchPage: React.FC = () => {
 
             // Update selectedBatch locally
             if (selectedBatch) {
-                const updatedStocks = (selectedBatch as any).batch_stocks.map((s: any) =>
-                    s.menus?.id === menuId ? { ...s, quantity_available: newAvailable } : s
-                );
-                setSelectedBatch({ ...selectedBatch, batch_stocks: updatedStocks } as any);
+                const updatedStocks = (selectedBatch.batch_stocks || []).map((stock) => {
+                    const stockMenuId = stock.menus?.id ?? stock.menu_id;
+                    return stockMenuId === menuId ? { ...stock, quantity_available: newAvailable } : stock;
+                });
+                setSelectedBatch({ ...selectedBatch, batch_stocks: updatedStocks });
             }
-        } catch (error: any) {
+        } catch (error) {
             toast.error('Failed to update stock');
             console.error(error);
         }
@@ -436,7 +479,7 @@ export const AdminBatchPage: React.FC = () => {
                                     {/* Simple summary line */}
                                     <div className={styles.cardSummary}>
                                         <span>{batch.order_count || 0} orders</span>
-                                        <span className={styles.dot}>•</span>
+                                        <span className={styles.dot}>|</span>
                                         <span>{batch.total_items || 0} items</span>
                                     </div>
                                 </div>
@@ -568,20 +611,21 @@ export const AdminBatchPage: React.FC = () => {
                                     <Package size={16} />
                                     <span>Stock Details</span>
                                     <span className={styles.stockBadge}>
-                                        {(selectedBatch as any).total_reserved || 0} / {selectedBatch.total_quantity || 0} reserved
+                                        {selectedBatch.total_reserved || 0} / {selectedBatch.total_quantity || 0} reserved
                                     </span>
                                 </div>
                                 <div className={styles.stockList}>
-                                    {(selectedBatch as any).batch_stocks?.map((stock: any) => {
+                                    {selectedBatch.batch_stocks?.map((stock) => {
+                                        const menuId = stock.menus?.id ?? stock.menu_id ?? null;
                                         const total = stock.quantity_available + stock.quantity_reserved;
                                         const reserved = stock.quantity_reserved;
                                         const available = stock.quantity_available;
                                         const percent = total > 0 ? (reserved / total) * 100 : 0;
                                         const isLowStock = available > 0 && available <= 3;
-                                        const isEditing = editingStockId === stock.menus?.id;
+                                        const isEditing = !!menuId && editingStockId === menuId;
 
                                         return (
-                                            <div key={stock.menus?.id || Math.random()} className={styles.stockItem}>
+                                            <div key={menuId || stock.menus?.name || Math.random()} className={styles.stockItem}>
                                                 {stock.menus?.image_url ? (
                                                     <img src={stock.menus.image_url} alt={stock.menus.name} className={styles.stockItemImage} />
                                                 ) : (
@@ -623,7 +667,7 @@ export const AdminBatchPage: React.FC = () => {
                                                             />
                                                             <button
                                                                 className={styles.editStockSave}
-                                                                onClick={() => handleInlineStockSave(stock.menus?.id, editingStockValue, reserved)}
+                                                                onClick={() => handleInlineStockSave(menuId, editingStockValue, reserved)}
                                                             >
                                                                 <Check size={14} />
                                                             </button>
@@ -643,7 +687,7 @@ export const AdminBatchPage: React.FC = () => {
                                                             <button
                                                                 className={styles.editStockBtn}
                                                                 onClick={() => {
-                                                                    setEditingStockId(stock.menus?.id);
+                                                                    setEditingStockId(menuId);
                                                                     setEditingStockValue(total);
                                                                 }}
                                                                 title="Edit stock"
@@ -656,7 +700,7 @@ export const AdminBatchPage: React.FC = () => {
                                             </div>
                                         );
                                     })}
-                                    {!(selectedBatch as any).batch_stocks?.length && (
+                                    {!selectedBatch.batch_stocks?.length && (
                                         <div className={styles.emptyStock}>No stock items</div>
                                     )}
                                 </div>

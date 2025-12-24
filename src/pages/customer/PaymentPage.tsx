@@ -114,8 +114,8 @@ export const PaymentPage: React.FC = () => {
                 }
 
                 // 6. Initialize Payment Timer
-                // Only for pending_payment orders
-                if (orderData.status === 'pending_payment') {
+                // Only for pending_payment orders (exclude COD)
+                if (orderData.status === 'pending_payment' && orderData.payment_method !== 'cod') {
                     let paymentStartedAt = orderData.payment_started_at;
 
                     // If payment_started_at is not set, set it now
@@ -142,6 +142,9 @@ export const PaymentPage: React.FC = () => {
                             setIsTimerExpired(true);
                         }
                     }
+                } else {
+                    setTimerExpiresAt(null);
+                    setIsTimerExpired(false);
                 }
 
             } catch (err) {
@@ -213,6 +216,10 @@ export const PaymentPage: React.FC = () => {
             if (error) throw error;
 
             setSelectedPaymentMethod(method);
+            if (method === 'cod') {
+                setTimerExpiresAt(null);
+                setIsTimerExpired(false);
+            }
             toast.success(`Metode pembayaran: ${method.toUpperCase()}`);
         } catch (err) {
             console.error('Error updating payment method:', err);
@@ -238,11 +245,15 @@ export const PaymentPage: React.FC = () => {
 
         setIsCancelling(true); // Reuse for loading state
         try {
+            const shouldResetTimer = uploadSuccess || selectedPaymentMethod === 'cod';
+
             // If proof was uploaded, delete it and reset timer
             if (uploadSuccess) {
                 // Delete payment proof from database
                 await supabase.rpc('delete_payment_proof', { p_order_id: orderId });
+            }
 
+            if (shouldResetTimer) {
                 // Reset payment_started_at to now (restart 15 min timer)
                 const now = new Date().toISOString();
                 await supabase
@@ -484,7 +495,7 @@ export const PaymentPage: React.FC = () => {
 
     // Handle timer expiry - auto cancel order
     const handleTimerExpire = useCallback(async () => {
-        if (!orderId || !order || isTimerExpired || uploadSuccess) return;
+        if (!orderId || !order || isTimerExpired || uploadSuccess || selectedPaymentMethod === 'cod') return;
 
         setIsTimerExpired(true);
         toast.error('Waktu pembayaran habis. Pesanan dibatalkan.');
@@ -523,7 +534,7 @@ export const PaymentPage: React.FC = () => {
         } catch (err) {
             console.error('Error auto-cancelling order:', err);
         }
-    }, [orderId, order, isTimerExpired, uploadSuccess, navigate]);
+    }, [orderId, order, isTimerExpired, uploadSuccess, selectedPaymentMethod, navigate]);
 
 
     if (isLoading) {

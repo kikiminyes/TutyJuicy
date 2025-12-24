@@ -33,6 +33,7 @@ interface ExtendedOrderItem extends OrderItem {
 export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClose, onUpdate }) => {
     const [items, setItems] = useState<ExtendedOrderItem[]>([]);
     const [proof, setProof] = useState<PaymentProof | null>(null);
+    const [proofUrl, setProofUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
     const [pendingStatus, setPendingStatus] = useState<Order['status'] | null>(null);
@@ -61,7 +62,24 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                     .eq('order_id', order.id)
                     .single();
 
-                if (proofData) setProof(proofData);
+                if (proofData) {
+                    setProof(proofData);
+                    if (proofData.file_path) {
+                        const { data: signedData, error: signedError } = await supabase.storage
+                            .from('payment-proofs')
+                            .createSignedUrl(proofData.file_path, 60 * 60);
+
+                        if (!signedError && signedData?.signedUrl) {
+                            setProofUrl(signedData.signedUrl);
+                        } else {
+                            setProofUrl(proofData.file_url || null);
+                        }
+                    } else {
+                        setProofUrl(proofData.file_url || null);
+                    }
+                } else {
+                    setProofUrl(null);
+                }
 
             } catch (error) {
                 console.error('Error fetching details:', error);
@@ -456,8 +474,8 @@ export const OrderDetailModal: React.FC<OrderDetailModalProps> = ({ order, onClo
                                 </div>
                             ) : (
                                 <div className={styles.proofContainer}>
-                                    <a href={proof.file_url} target="_blank" rel="noopener noreferrer" className={styles.proofLink}>
-                                        <img src={proof.file_url} alt="Payment Proof" className={styles.proofImage} />
+                                    <a href={proofUrl || proof.file_url} target="_blank" rel="noopener noreferrer" className={styles.proofLink}>
+                                        <img src={proofUrl || proof.file_url} alt="Payment Proof" className={styles.proofImage} />
                                         <span className={styles.viewProof}><ExternalLink size={16} /> Lihat Gambar</span>
                                     </a>
                                 </div>

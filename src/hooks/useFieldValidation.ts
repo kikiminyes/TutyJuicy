@@ -46,7 +46,12 @@ export default function useFieldValidation<T = string>(
     return () => { cancelled = true; };
   }, [debounced, validator]);
 
-  const markTouched: Dispatch<SetStateAction<boolean>> = (v) => setTouched((prev) => typeof v === 'function' ? (v as any)(prev) : v as boolean);
+  const markTouched: Dispatch<SetStateAction<boolean>> = (value) => {
+    setTouched((prev) => (typeof value === 'function'
+      ? (value as (current: boolean) => boolean)(prev)
+      : value
+    ));
+  };
 
   return {
     touched,

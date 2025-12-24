@@ -78,6 +78,7 @@ export interface PaymentProof {
     id: string;
     order_id: string;
     file_url: string;
+    file_path?: string | null;
     file_type: string;
     uploaded_at: string;
 }

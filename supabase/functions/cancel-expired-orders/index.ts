@@ -26,6 +26,23 @@ Deno.serve(async (req) => {
     }
 
     try {
+        const cronSecret = Deno.env.get('CRON_SECRET')
+        if (!cronSecret) {
+            console.error('Missing CRON_SECRET')
+            return new Response(
+                JSON.stringify({ error: 'Server not configured' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
+        const requestSecret = req.headers.get('x-cron-secret')
+        if (requestSecret !== cronSecret) {
+            return new Response(
+                JSON.stringify({ error: 'Unauthorized' }),
+                { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+        }
+
         // Initialize Supabase client with service role key
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!
         const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -40,6 +57,7 @@ Deno.serve(async (req) => {
             .from('orders')
             .select('id, batch_id')
             .eq('status', 'pending_payment')
+            .neq('payment_method', 'cod')
             .not('payment_started_at', 'is', null)
             .lt('payment_started_at', fifteenMinutesAgo)
 
@@ -59,20 +77,22 @@ Deno.serve(async (req) => {
         }
 
         // 2. Filter out orders that have payment proofs uploaded
-        const ordersToCancel: ExpiredOrder[] = []
+        const orderIds = expiredOrders.map((order) => order.id)
+        const { data: proofs, error: proofError } = await supabase
+            .from('payment_proofs')
+            .select('order_id')
+            .in('order_id', orderIds)
 
-        for (const order of expiredOrders) {
-            const { data: proofData } = await supabase
-                .from('payment_proofs')
-                .select('id')
-                .eq('order_id', order.id)
-                .single()
-
-            // Only cancel if no payment proof exists
-            if (!proofData) {
-                ordersToCancel.push(order)
-            }
+        if (proofError) {
+            console.error('Error fetching payment proofs:', proofError)
+            return new Response(
+                JSON.stringify({ error: 'Failed to fetch payment proofs' }),
+                { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
         }
+
+        const proofOrderIds = new Set((proofs || []).map((proof) => proof.order_id))
+        const ordersToCancel: ExpiredOrder[] = expiredOrders.filter((order) => !proofOrderIds.has(order.id))
 
         if (ordersToCancel.length === 0) {
             return new Response(

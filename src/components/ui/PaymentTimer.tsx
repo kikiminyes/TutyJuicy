@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Clock } from 'lucide-react';
 import styles from './PaymentTimer.module.css';
 
@@ -19,48 +19,41 @@ export const PaymentTimer: React.FC<PaymentTimerProps> = ({
     isPaused,
     isExpired = false,
 }) => {
-    const [timeLeft, setTimeLeft] = useState<number>(0);
-    const [hasExpired, setHasExpired] = useState(false);
+    const getTimeLeft = (target: Date) => {
+        const diff = Math.max(0, target.getTime() - Date.now());
+        return Math.floor(diff / 1000);
+    };
 
-    const calculateTimeLeft = useCallback(() => {
-        const now = new Date().getTime();
-        const expiry = expiresAt.getTime();
-        const diff = Math.max(0, expiry - now);
-        return Math.floor(diff / 1000); // seconds
-    }, [expiresAt]);
+    const [timeLeft, setTimeLeft] = useState<number>(() => getTimeLeft(expiresAt));
+    const hasExpiredRef = useRef(false);
 
     useEffect(() => {
-        // Initial calculation
-        const initialTime = calculateTimeLeft();
-        setTimeLeft(initialTime);
+        hasExpiredRef.current = false;
 
-        if (initialTime <= 0 && !hasExpired && !isPaused) {
-            setHasExpired(true);
-            onExpire();
-            return;
-        }
+        if (isPaused || isExpired) return;
 
-        // Don't run timer if paused or already expired
-        if (isPaused || hasExpired || isExpired) return;
+        let active = true;
 
-        const interval = setInterval(() => {
-            const remaining = calculateTimeLeft();
+        const tick = () => {
+            if (!active) return;
+            const remaining = getTimeLeft(expiresAt);
             setTimeLeft(remaining);
 
-            if (remaining <= 0 && !hasExpired) {
-                setHasExpired(true);
-                clearInterval(interval);
+            if (remaining <= 0 && !hasExpiredRef.current) {
+                hasExpiredRef.current = true;
                 onExpire();
             }
-        }, 1000);
+        };
 
-        return () => clearInterval(interval);
-    }, [expiresAt, isPaused, hasExpired, isExpired, calculateTimeLeft, onExpire]);
+        const timeoutId = setTimeout(tick, 0);
+        const interval = setInterval(tick, 1000);
 
-    // Reset hasExpired if expiresAt changes (timer reset)
-    useEffect(() => {
-        setHasExpired(false);
-    }, [expiresAt]);
+        return () => {
+            active = false;
+            clearTimeout(timeoutId);
+            clearInterval(interval);
+        };
+    }, [expiresAt, isPaused, isExpired, onExpire]);
 
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
@@ -68,7 +61,7 @@ export const PaymentTimer: React.FC<PaymentTimerProps> = ({
     // Determine color class based on time remaining
     const getColorClass = () => {
         if (isPaused) return styles.paused;
-        if (isExpired || hasExpired || timeLeft <= 0) return styles.expired;
+        if (isExpired || timeLeft <= 0) return styles.expired;
         if (minutes < 2) return styles.critical; // Red, pulsing
         if (minutes < 5) return styles.warning;   // Yellow
         return styles.safe;                        // Green
@@ -77,7 +70,7 @@ export const PaymentTimer: React.FC<PaymentTimerProps> = ({
     // Format display
     const getDisplayText = () => {
         if (isPaused) return 'Menunggu verifikasi';
-        if (isExpired || hasExpired || timeLeft <= 0) return 'Waktu habis';
+        if (isExpired || timeLeft <= 0) return 'Waktu habis';
         if (minutes === 0) return `${seconds} detik tersisa`;
         return `${minutes} menit tersisa`;
     };
@@ -86,7 +79,7 @@ export const PaymentTimer: React.FC<PaymentTimerProps> = ({
         <div className={`${styles.timer} ${getColorClass()}`}>
             <Clock size={16} className={styles.icon} />
             <span className={styles.text}>{getDisplayText()}</span>
-            {!isPaused && !isExpired && !hasExpired && timeLeft > 0 && (
+            {!isPaused && !isExpired && timeLeft > 0 && (
                 <span className={styles.countdown}>
                     {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                 </span>

@@ -15,17 +15,24 @@ export const AdminLoginPage: React.FC = () => {
         setIsLoading(true);
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
             if (error) throw error;
 
+            const role = data.user?.app_metadata?.role ?? data.user?.user_metadata?.role;
+            if (role !== 'admin') {
+                await supabase.auth.signOut();
+                throw new Error('Akun ini bukan admin');
+            }
+
             toast.success('Welcome back!');
             navigate('/admin/orders');
-        } catch (error: any) {
-            toast.error(error.message || 'Login failed');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Login failed';
+            toast.error(message);
         } finally {
             setIsLoading(false);
         }
@@ -62,7 +69,7 @@ export const AdminLoginPage: React.FC = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             className={styles.input}
-                            placeholder="••••••••"
+                            placeholder="********"
                         />
                     </div>
 

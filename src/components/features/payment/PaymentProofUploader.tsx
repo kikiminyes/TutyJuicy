@@ -25,6 +25,12 @@ export const PaymentProofUploader: React.FC<PaymentProofUploaderProps> = ({
   onChangeMethod,
   isChangeAllowed = true,
 }) => {
+  type SignedUploadResponse = {
+    path: string;
+    token: string;
+    signedUrl: string;
+  };
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -99,22 +105,37 @@ export const PaymentProofUploader: React.FC<PaymentProofUploaderProps> = ({
     setIsUploading(true);
 
     try {
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${orderId}-${Date.now()}.${fileExt}`;
+      const { data: signedData, error: signedError } = await supabase.functions
+        .invoke<SignedUploadResponse>('payment-proof-upload', {
+          body: {
+            orderId,
+            fileName: selectedFile.name,
+            fileType: selectedFile.type,
+          }
+        });
+
+      if (signedError || !signedData?.path || !signedData?.token) {
+        throw signedError || new Error('Gagal membuat link upload');
+      }
 
       const { error: uploadError } = await supabase.storage
         .from('payment-proofs')
-        .upload(fileName, selectedFile);
+        .uploadToSignedUrl(signedData.path, signedData.token, selectedFile);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('payment-proofs')
-        .getPublicUrl(fileName);
+        .getPublicUrl(signedData.path);
 
       const { error: dbError } = await supabase
         .from('payment_proofs')
-        .insert({ order_id: orderId, file_url: publicUrl, file_type: selectedFile.type });
+        .insert({
+          order_id: orderId,
+          file_url: publicUrl,
+          file_path: signedData.path,
+          file_type: selectedFile.type
+        });
 
       if (dbError) throw dbError;
 
@@ -123,7 +144,7 @@ export const PaymentProofUploader: React.FC<PaymentProofUploaderProps> = ({
       toast.success('Bukti pembayaran terkirim!');
       onUploadSuccess();
 
-    } catch (error: any) {
+    } catch {
       toast.error('Gagal mengirim bukti.');
     } finally {
       setIsUploading(false);
