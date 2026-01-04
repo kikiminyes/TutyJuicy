@@ -17,7 +17,10 @@
         "payment": "Payment",
         "item": "Item",
         "items": "Items",
-        "maxItemError": "Maximum {{max}} items per product"
+        "maxItemError": "Maximum {{max}} items per product",
+        "viewCart": "View Cart",
+        "clear": "Clear",
+        "confirmClear": "Remove all items from cart?"
     },
     "checkout": {
         "title": "Checkout",

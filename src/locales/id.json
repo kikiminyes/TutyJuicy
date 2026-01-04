@@ -17,7 +17,10 @@
         "payment": "Pembayaran",
         "item": "Item",
         "items": "Item",
-        "maxItemError": "Maksimal {{max}} item per produk"
+        "maxItemError": "Maksimal {{max}} item per produk",
+        "viewCart": "Lihat Keranjang",
+        "clear": "Kosongkan",
+        "confirmClear": "Hapus semua item dari keranjang?"
     },
     "checkout": {
         "title": "Checkout",

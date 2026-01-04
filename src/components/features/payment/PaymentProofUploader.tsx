@@ -153,20 +153,6 @@ export const PaymentProofUploader: React.FC<PaymentProofUploaderProps> = ({
 
   return (
     <section className={styles.section}>
-      {/* Back Button - Only show if change is allowed */}
-      {isChangeAllowed && (
-        <div className={styles.backButtonContainer}>
-          <button
-            className={styles.backButton}
-            onClick={onChangeMethod}
-            type="button"
-          >
-            <ArrowLeft size={18} />
-            <span>Ganti Metode Pembayaran</span>
-          </button>
-        </div>
-      )}
-
       {/* QRIS */}
       {selectedPaymentMethod === 'qris' && paymentSettings?.qris_image_url && (
         <div className={styles.qrisSection}>
@@ -313,7 +299,19 @@ export const PaymentProofUploader: React.FC<PaymentProofUploaderProps> = ({
         )}
       </div>
 
-      {/* Ganti Metode button removed - it appears in PaymentPage after upload success */}
+      {/* Back Button - Below upload section */}
+      {isChangeAllowed && (
+        <div className={styles.backButtonContainer}>
+          <button
+            className={styles.backButton}
+            onClick={onChangeMethod}
+            type="button"
+          >
+            <ArrowLeft size={18} />
+            <span>Ganti Metode Pembayaran</span>
+          </button>
+        </div>
+      )}
 
       {/* QRIS Fullscreen Modal */}
       {showQrisFullscreen && paymentSettings?.qris_image_url && (

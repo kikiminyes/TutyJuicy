@@ -346,28 +346,32 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.875rem 1.5rem;
-    background: white;
-    border: 2px solid #059669;
-    /* Stronger border */
-    color: #059669;
-    /* Stronger text */
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    border: none;
+    color: white;
     border-radius: var(--radius-lg);
     font-weight: 700;
-    /* Bolder text */
     font-size: 0.9375rem;
-    /* Slightly larger */
     cursor: pointer;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 6px rgba(5, 150, 105, 0.15);
-    /* More visible shadow */
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+    animation: pulseOrange 2s ease-in-out infinite;
+}
+
+@keyframes pulseOrange {
+    0%, 100% {
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.35);
+    }
+    50% {
+        box-shadow: 0 4px 20px rgba(249, 115, 22, 0.5);
+    }
 }
 
 .changeMethodBtn:hover {
-    background: #ecfdf5;
-    border-color: #047857;
-    color: #047857;
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(5, 150, 105, 0.25);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.45);
+    animation: none;
 }
 
 .changeMethodBtn:active {

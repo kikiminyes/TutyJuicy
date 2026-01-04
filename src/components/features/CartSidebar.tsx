@@ -39,6 +39,9 @@ export const CartSidebar: React.FC = () => {
                 aria-labelledby="cart-sidebar-title"
                 onKeyDown={handleKeyDown}
             >
+                <div className={styles.dragHandle} onClick={toggleCart}>
+                    <div className={styles.dragIndicator} />
+                </div>
                 <div className={styles.header}>
                     <h2 id="cart-sidebar-title" className={styles.title}>
                         {t('cart.title')}
