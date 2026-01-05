@@ -63,7 +63,6 @@ export const useCartStore = create<CartStore>()(
                                     items: state.items.map((i) =>
                                         i.id === menu.id ? { ...i, max_stock: maxStock } : i
                                     ),
-                                    isOpen: true,
                                 };
                             }
                             return state;
@@ -75,19 +74,17 @@ export const useCartStore = create<CartStore>()(
                                     ? { ...i, quantity: newQty, max_stock: maxStock ?? i.max_stock }
                                     : i
                             ),
-                            isOpen: true,
                         };
                     }
 
                     // New item
                     if (1 > limit) {
                         toast.error(t('menu.stockInsufficient'));
-                        return { items: [...state.items], isOpen: true }; // Should not happen for 1, but safe guard
+                        return state;
                     }
 
                     return {
                         items: [...state.items, { ...menu, quantity: 1, max_stock: maxStock }],
-                        isOpen: true,
                     };
                 });
             },

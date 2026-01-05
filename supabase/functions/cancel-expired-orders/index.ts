@@ -1,6 +1,6 @@
 // Supabase Edge Function: Cancel Expired Payment Orders
 // This function runs on a schedule (cron) to automatically cancel orders
-// where the payment timer has expired (15 minutes)
+// where the payment timer has expired (5 minutes)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -49,9 +49,9 @@ Deno.serve(async (req) => {
 
         const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-        // 1. Find all expired orders (payment_started_at + 15 min < now)
+        // 1. Find all expired orders (payment_started_at + 5 min < now)
         //    AND no payment_proof uploaded
-        const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
 
         const { data: expiredOrders, error: fetchError } = await supabase
             .from('orders')
@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
             .eq('status', 'pending_payment')
             .neq('payment_method', 'cod')
             .not('payment_started_at', 'is', null)
-            .lt('payment_started_at', fifteenMinutesAgo)
+            .lt('payment_started_at', fiveMinutesAgo)
 
         if (fetchError) {
             console.error('Error fetching expired orders:', fetchError)

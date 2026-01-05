@@ -15,7 +15,7 @@ import toast from 'react-hot-toast';
 import { openWhatsApp } from '../../lib/whatsapp';
 
 // Payment timeout in minutes
-const PAYMENT_TIMEOUT_MINUTES = 15;
+const PAYMENT_TIMEOUT_MINUTES = 5;
 
 interface OrderItem {
     quantity: number;
@@ -409,6 +409,20 @@ export const PaymentPage: React.FC = () => {
         }
     };
 
+    // Handle back button in header
+    const handleBackButton = () => {
+        // If payment method is selected and order is still pending, go back to method selection
+        if (selectedPaymentMethod && isPending) {
+            handleChangePaymentMethodClick();
+        } else if (canCancel()) {
+            // If no method selected but can cancel, show back to checkout dialog
+            setShowBackDialog(true);
+        } else {
+            // Otherwise just go home
+            navigate('/');
+        }
+    };
+
     // Handle back button - cancel order and go to checkout
     const handleBackToCheckout = async () => {
         if (!orderId || !order) return;
@@ -562,7 +576,7 @@ export const PaymentPage: React.FC = () => {
         <div className={styles.container}>
             {/* Header */}
             <header className={styles.header}>
-                <button className={styles.backBtn} onClick={() => canCancel() ? setShowBackDialog(true) : navigate('/')}> <ArrowLeft size={20} /> </button>
+                <button className={styles.backBtn} onClick={handleBackButton}> <ArrowLeft size={20} /> </button>
                 <h1 className={styles.headerTitle}>Pembayaran</h1>
                 {/* Timer for pending payment orders, otherwise empty spacer */}
                 {isPending && timerExpiresAt && !isCancelled ? (
@@ -645,7 +659,7 @@ export const PaymentPage: React.FC = () => {
                                 displayTotal={displayTotal}
                                 onUploadSuccess={() => setUploadSuccess(true)}
                                 onChangeMethod={handleChangePaymentMethod}
-                                isChangeAllowed={isPending}
+                                isChangeAllowed={false}
                             />
                         )}
                         {/* COD Selected */}
@@ -656,13 +670,6 @@ export const PaymentPage: React.FC = () => {
                                     <h2>Cash on Delivery</h2>
                                     <p>Untuk pembayaran COD, mohon konfirmasi langsung ke Bu Tuty via WhatsApp agar pesanan segera diproses.</p>
                                     <p className={styles.successHint}>Anda akan menerima notifikasi WhatsApp ketika pesanan siap.</p>
-                                    {/* Only show change button if payment is still pending */}
-                                    {isPending && (
-                                        <button className={styles.changeMethodBtn} onClick={handleChangePaymentMethod}>
-                                            <ArrowLeft size={16} style={{ marginRight: '0.5rem', display: 'inline-block', verticalAlign: 'text-bottom' }} />
-                                            Ganti Metode Pembayaran
-                                        </button>
-                                    )}
                                 </div>
                             </section>
                         )}
@@ -674,13 +681,6 @@ export const PaymentPage: React.FC = () => {
                                     <h2>Bukti Terkirim!</h2>
                                     <p>Menunggu verifikasi dari admin.</p>
                                     <p className={styles.successHint}>Anda akan menerima notifikasi WhatsApp setelah pembayaran diverifikasi.</p>
-                                    {/* Only show change button if payment is still pending (not yet verified by admin) */}
-                                    {isPending && (
-                                        <button className={styles.changeMethodBtn} onClick={handleChangePaymentMethod}>
-                                            <ArrowLeft size={16} style={{ marginRight: '0.5rem', display: 'inline-block', verticalAlign: 'text-bottom' }} />
-                                            Ganti Metode Pembayaran
-                                        </button>
-                                    )}
                                 </div>
                             </section>
                         )}
@@ -774,7 +774,7 @@ export const PaymentPage: React.FC = () => {
                 isOpen={showChangeMethodDialog}
                 title="Ganti Metode Pembayaran?"
                 message={uploadSuccess
-                    ? "Bukti pembayaran yang sudah dikirim akan dihapus dan waktu pembayaran akan diulang dari 15 menit. Lanjutkan?"
+                    ? "Bukti pembayaran yang sudah dikirim akan dihapus dan waktu pembayaran akan diulang dari 5 menit. Lanjutkan?"
                     : "Anda akan memilih metode pembayaran baru. Lanjutkan?"
                 }
                 variant={uploadSuccess ? "danger" : "default"}

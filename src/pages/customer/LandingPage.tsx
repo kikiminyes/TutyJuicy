@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import type { Batch } from '../../types';
 import { MenuGrid } from '../../components/features/MenuGrid';
 import { StickyCart } from '../../components/features/StickyCart';
+import { CartSidebar } from '../../components/features/CartSidebar';
 import { WaitlistModal } from '../../components/features/waitlist/WaitlistModal';
 import { CustomerLayout } from '../../components/layout/CustomerLayout';
 import { Bell, Calendar } from 'lucide-react';
@@ -122,6 +123,7 @@ export const LandingPage: React.FC = () => {
             )}
 
             <StickyCart />
+            <CartSidebar />
             <WaitlistModal isOpen={showWaitlist} onClose={() => setShowWaitlist(false)} adminPhone={adminPhone} />
         </CustomerLayout>
     );
